@@ -5,7 +5,6 @@ import { BadValuesError, NotAllowedError, NotFoundError } from "./errors";
 export interface UserDoc extends BaseDoc {
   username: string;
   password: string;
-  stepSize: string;
 }
 
 /**
@@ -26,8 +25,7 @@ export default class AuthenticatingConcept {
 
   async create(username: string, password: string) {
     await this.assertGoodCredentials(username, password);
-    const stepSize = "1"; // Default stepSize
-    const _id = await this.users.createOne({ username, password, stepSize });
+    const _id = await this.users.createOne({ username, password });
     return { msg: "User created successfully!", user: await this.users.readOne({ _id }) };
   }
 
@@ -113,24 +111,7 @@ export default class AuthenticatingConcept {
     }
     await this.assertUsernameUnique(username);
   }
-  //
-  //
-  //
-  // New method to update stepSize
-  async updateStepSize(_id: ObjectId, stepSize: string) {
-    await this.users.partialUpdateOne({ _id }, { stepSize });
-    return { msg: "Step size updated successfully!", stepSize };
-  }
 
-  // Helper method to validate stepSize
-  // private async assertStepSizeValid(stepSize: number) {
-  //   if (!Number.isInteger(stepSize) || stepSize < 1 || stepSize > 5) {
-  //     throw new BadValuesError("Step size must be an integer between 1 and 5.");
-  //   }
-  // }
-  //
-  //
-  //
   private async assertUsernameUnique(username: string) {
     if (await this.users.readOne({ username })) {
       throw new NotAllowedError(`User with username ${username} already exists!`);
