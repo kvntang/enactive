@@ -108,13 +108,7 @@ class Routes {
       body: JSON.stringify({
         model: "gpt-4", // Specify the model
         messages: [
-          { role: "user", content: `Strictly generate a JSON object with keys 0-35 containing words similar to this scene: ${prompt}. Ensure 0 is most similar. Make sure you only give one word response for each. Format exactly like:
-                {{
-                  "0": "most similar word",
-                  "1": "second similar word",
-                  ...
-                  "35": "least similar word"
-                }},` }
+          { role: "user", content: `Strictly generate a list of 36 string containing words similar to this scene: ${prompt}. Rank them from most similar to most dissimilar. The list will be indivudal words seperated by comma. Format exactly like: "one, two, three"`}
         ],
       }),
     });

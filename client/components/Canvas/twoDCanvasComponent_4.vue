@@ -116,7 +116,7 @@ onMounted(() => {
         color: p5.Color;
         type: string;
         step: number;
-        promptIndex?: number;
+        promptIndex: number;
         _id?: string;
         originalImage: string;
         parent_id?: string;
@@ -203,7 +203,7 @@ onMounted(() => {
               color,
               type: image.type,
               step: step,
-              promptIndex: parseInt(image.prompt),
+              promptIndex: Number(image.prompt),
               _id: image._id,
               parent_id: image.parent,
               originalImage: image.originalImage,
@@ -303,28 +303,33 @@ onMounted(() => {
           p.fill(255);
           p.textAlign(p.CENTER, p.CENTER);
 
-          // In draw function, modify the promptList parsing:
+          // In draw function, modify the promptList parsing:-------------------------------------------------
           if (sp.promptList) {
             try {
-              const prompts = JSON.parse(sp.promptList);
-              const promptWord = prompts[sp.promptIndex?.toString() || ''] || '';
-              p.text(promptWord, sp.pos.x, sp.pos.y);
+              const cleanedPromptList = sp.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
+              const prompts = cleanedPromptList.split(",").map(word => word.trim());
+
+              const promptWord = prompts[sp.promptIndex]; //pick the right word
             } catch (e) {
               console.log(`Error parsing promptList for ImageDoc ID: ${sp._id}`);
             } 
-            // display caption at the bottom      
-            p.text(sp.caption, sp.pos.x, sp.pos.y + 50);
+            // display caption at the bottom 
+            p.textSize(15);     
+            p.textAlign(p.CENTER, p.TOP);
+            p.textWrap(p.WORD);  // Wrap by word (use p.CHAR for character wrapping)
+            const maxTextWidth = 140;  // Set maximum width for wrapping
+            p.text(sp.caption, sp.pos.x - maxTextWidth/2, sp.pos.y + 50, maxTextWidth);
           }
 
         });
 
-        // Draw the moving point when dragging or moving
-        if (isDraggingNew || point.isMoving) {
-          p.fill(currentColor);
-          p.stroke(255);
-          p.rectMode(p.CENTER);
-          p.rect(point.pos.x, point.pos.y, 70, 70);
-        }
+        // Draw the moving point when dragging or moving-------------------------------------------------
+        // if (isDraggingNew || point.isMoving) {
+        //   p.fill(currentColor);
+        //   p.stroke(255);
+        //   p.rectMode(p.CENTER);
+        //   p.rect(point.pos.x, point.pos.y, 70, 70);
+        // }
 
         // Dragging feedback for creating new ImageDoc
         if (isDraggingNew) {
@@ -364,25 +369,19 @@ onMounted(() => {
           let lineEnd = p5.Vector.add(point.pos, direction);
           p.line(point.pos.x, point.pos.y, lineEnd.x, lineEnd.y);
 
-          p.stroke(0);
-          p.fill(255);
-          p.textSize(32);
-
-          // Draw launch type
-          p.text(point.type, point.pos.x, point.pos.y);
 
           // Draw the angle index
           const { promptIndex } = getPromptIndex(point.type, snappedAngleDegrees);
-          // p.text(promptIndex, lineEnd.x, lineEnd.y);)
-          // Get the corresponding prompt word
           const lastImage = staticPositions[staticPositions.length - 1]; 
-          const prompts = JSON.parse(lastImage.promptList || '{}');
-          const promptWord = prompts[promptIndex.toString()] || 'Unknown';
+          const cleanedPromptList = lastImage.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
+          const prompts = cleanedPromptList.split(",").map(word => word.trim());
+          const promptWord = prompts[promptIndex];
           const gridSize = 70; 
           const newY = lastImage.pos.y + 50; // Define newY
-          p.text(promptWord, lastImage.pos.x + gridSize / 2, newY + gridSize / 2);
-          p.textSize(14);
-          p.text("Pick a prompt! The lower the number, \n the more similar to the original prompt.", point.pos.x, point.pos.y - dynamicRadius - 30);
+          p.textSize(25);
+          p.fill(255);
+          p.text(promptWord, lineEnd.x, lineEnd.y);
+          p.text(point.type, point.pos.x, point.pos.y - dynamicRadius - 30);
         }
 
         p.pop();

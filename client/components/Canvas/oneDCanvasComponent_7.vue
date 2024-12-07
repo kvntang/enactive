@@ -79,7 +79,7 @@ onMounted(() => {
         color: p5.Color;
         type: string;
         step: number;
-        promptIndex?: number;
+        promptIndex: number;
         _id?: string;
         originalImage: string;
         parent_id?: string;
@@ -380,11 +380,12 @@ onMounted(() => {
           // display promptList
           if (sp.promptList && sp.promptIndex !== undefined) {
             try {
-              const prompts = JSON.parse(sp.promptList);
-              console.log(`ImageDoc ID: ${sp._id}, Prompts:`, prompts);
-              console.log(`Prompt Index: ${sp.promptIndex}`);
-              const promptWord = prompts[sp.promptIndex.toString()] || 'Unknown';
-              console.log(`Prompt Word: ${promptWord}`);
+              // Split the promptList into an array by commas and trim whitespace
+              const cleanedPromptList = sp.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
+              const prompts = cleanedPromptList.split(",").map(word => word.trim());
+
+              const promptWord = prompts[sp.promptIndex]; //pick the right word
+
               
               p.fill(255);
               p.textAlign(p.CENTER, p.CENTER);
@@ -394,7 +395,10 @@ onMounted(() => {
             }
           }
           // Display the caption at the bottom of the image -------------------------------------------------
-          p.text(sp.caption, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2 + 50);
+          p.textAlign(p.CENTER, p.TOP);
+          p.textWrap(p.WORD);  // Wrap by word (use p.CHAR for character wrapping)
+          const maxTextWidth = 140;  // Set maximum width for wrapping
+          p.text(sp.caption, sp.pos.x + gridSize / 2 - maxTextWidth/2, sp.currentY + gridSize / 2 + 50, maxTextWidth);
           
         }
 
