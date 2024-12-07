@@ -1,14 +1,10 @@
-<script setup lang="ts">
-import { HfInference } from "@huggingface/inference";
-import { ref } from "vue";
-import { fetchy } from "../../utils/fetchy";
+import { ObjectId } from "mongodb";
+import DocCollection, { BaseDoc } from "../framework/doc";
+import { NotAllowedError, NotFoundError } from "./errors";
 
-// Hugging Face Inference instance
-const inference = new HfInference("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");
-
-interface ImageDoc {
-  author: string;
-  parent: string;
+export interface ImageDoc extends BaseDoc {
+  author: ObjectId;
+  parent: ObjectId;
   coordinate: string;
   prompt: string;
   type: string;
@@ -16,135 +12,88 @@ interface ImageDoc {
   originalImage: string;
   steppedImage: string;
   promptedImage: string;
-  _id: string;
+  caption?: string;
 }
 
-// Form input fields
-const photo = ref<File | null>(null);
-const emit = defineEmits(["refreshImages"]);
+export default class ImageConcept {
+  public readonly images: DocCollection<ImageDoc>;
 
-// Helper function to convert file to base64
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = (error) => reject(error);
-  });
-};
-
-// Direct Hugging Face caption generation
-const generateCaption = async (imageBase64: string): Promise<string> => {
-  try {
-    const base64Data = imageBase64.split(",")[1];
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = Array.from(byteCharacters, char => char.charCodeAt(0));
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: "image/jpeg" });
-
-    const result = await inference.imageToText({
-      data: blob,
-      model: "nlpconnect/vit-gpt2-image-captioning",
-    });
-
-    return result.generated_text;
-  } catch (error) {
-    console.error("Error generating caption:", error);
-    return "Failed to generate caption";
+  constructor(collectionName: string) {
+    this.images = new DocCollection<ImageDoc>(collectionName);
   }
-};
 
-const createImageDoc = async (): Promise<ImageDoc | null> => {
-  try {
-    let base64Photo = null;
-    let caption = "";
+  async create(author: ObjectId, parent: ObjectId, coordinate: string, type: string, step: string, prompt?: string, originalImage?: string, steppedImage?: string, promptedImage?: string, caption?:string) {    
+    const _id = await this.images.createOne({
+      author,
+      parent,
+      coordinate,
+      type,
+      step,
+      prompt: prompt || "",
+      originalImage: originalImage || "",
+      steppedImage: steppedImage || "",
+      promptedImage: promptedImage || "",
+      caption: caption || "", 
+    });
+  
+    return { msg: "Image successfully created!", image: await this.images.readOne({ _id }) };
+  }
 
-    if (photo.value) {
-      try {
-        base64Photo = await fileToBase64(photo.value);
-        caption = await generateCaption(base64Photo); //get caption
-        console.log("Image caption:", caption);
-      } catch (error) {
-        console.error("Error converting image or generating caption:", error);
-      }
+  async getImages() {
+    return await this.images.readMany({}, { sort: { _id: -1 } });
+  }
+
+  async getImagesByAuthor(author: ObjectId) {
+    return await this.images.readMany({ author });
+  }
+
+  async getImageById(_id: ObjectId) {
+    const image = await this.images.readOne({ _id });
+    if (!image) {
+      throw new NotFoundError(`Image with ID ${_id} does not exist!`);
     }
-
-    //Create Initial ImageDoc
-    const response = await fetchy("/api/images", "POST", {
-      body: {
-        author: "mocked-author-id", // Mocked user
-        parent: "", // Parent ID is empty for the root node
-        coordinate: "50,50",
-        type: "denosie",
-        step: "0",
-        prompt: "0",
-        originalImage: base64Photo,
-        steppedImage: "",
-        promptedImage: "",
-        caption: caption, // Include the generated caption
-      },
-    });
-    console.log(`Initial ImageDoc created successfully!`);
-    emit("refreshImages"); // Let the parent know to refresh the images
-
-    // Reset the form
-    emptyForm();
-
-    return response as ImageDoc;
-  } catch (error) {
-    console.error("Error creating ImageDoc:", error);
-    return null;
+    return image;
   }
-};
 
-// Function to reset the form fields
-const emptyForm = () => {
-  photo.value = null;
-};
-
-// Function to handle file change safely
-const handleFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  if (target && target.files && target.files.length > 0) {
-    photo.value = target.files[0];
-  } else {
-    photo.value = null;
+  async updateImage(_id: ObjectId, coordinate?: string, type?: string, step?: string, prompt?: string, originalImage?: string, steppedImage?: string, promptedImage?: string) {
+    await this.images.partialUpdateOne({ _id }, { coordinate, type, step, prompt, originalImage, steppedImage, promptedImage });
+    return { msg: "Image successfully updated!" };
   }
-};
-</script>
 
-<template>
-  <form @submit.prevent="createImageDoc">
-    <input id="photo" type="file" accept="image/*" @change="handleFileChange" />
-    <button type="submit" class="pure-button-primary pure-button" :disabled="!photo">Upload</button>
-  </form>
-</template>
+  async deleteImageById(_id: ObjectId) {
+    await this.images.deleteOne({ _id });
+    return { msg: "Image deleted successfully!" };
+  }
 
-<style scoped>
-form {
-  background-color: #3fa14c68;
-  border-radius: 1em;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5em;
-  padding: 1em;
-  width: 90%; /* Set a responsive width */
-  max-width: 40em; /* Ensure it doesn’t grow too large on wide screens */
-  margin: 1em auto; /* Center the article and add spacing between articles */
+  async deleteAllByAuthor(author: ObjectId) {
+    await this.images.deleteMany({ author });
+    return { msg: "All images for this author have been deleted!" };
+  }
+
+  async assertAuthorIsUser(_id: ObjectId, user: ObjectId) {
+    const image = await this.images.readOne({ _id });
+    if (!image) {
+      throw new NotFoundError(`Image ${_id} does not exist!`);
+    }
+    if (image.author.toString() !== user.toString()) {
+      throw new ImageAuthorNotMatchError(user, _id);
+    }
+  }
+
+  async assertImageExists(_id: ObjectId) {
+    const image = await this.images.readOne({ _id });
+    if (!image) {
+      throw new NotFoundError(`Image with ID ${_id} does not exist!`);
+    }
+    return image;
+  }
 }
 
-textarea {
-  font-family: inherit;
-  font-size: inherit;
-  height: 6em;
-  padding: 0.5em;
-  border-radius: 4px;
-  resize: none;
+export class ImageAuthorNotMatchError extends NotAllowedError {
+  constructor(
+    public readonly author: ObjectId,
+    public readonly _id: ObjectId,
+  ) {
+    super("{0} is not the author of image {1}!", author, _id);
+  }
 }
-
-button:disabled {
-  background-color: #000000; /* Gray background */
-  cursor: not-allowed; /* Indicate it's not clickable */
-  opacity: 0.2; /* Slightly transparent */
-}
-</style>
