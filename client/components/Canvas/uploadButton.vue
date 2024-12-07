@@ -1,11 +1,15 @@
 <script setup lang="ts">
+import { HfInference } from "@huggingface/inference";
 import { ref } from "vue";
 import { fetchy } from "../../utils/fetchy";
 
+// Hugging Face Inference instance
+const inference = new HfInference("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");
+
 interface ImageDoc {
   author: string;
-  parent: string; // Parent ImageDoc ID
-  coordinate: string; // stored as x, y
+  parent: string;
+  coordinate: string;
   prompt: string;
   type: string;
   step: string;
@@ -29,16 +33,39 @@ const fileToBase64 = (file: File): Promise<string> => {
   });
 };
 
+// Direct Hugging Face caption generation
+const generateCaption = async (imageBase64: string): Promise<string> => {
+  try {
+    const base64Data = imageBase64.split(",")[1];
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = Array.from(byteCharacters, char => char.charCodeAt(0));
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: "image/jpeg" });
+
+    const result = await inference.imageToText({
+      data: blob,
+      model: "nlpconnect/vit-gpt2-image-captioning",
+    });
+
+    return result.generated_text;
+  } catch (error) {
+    console.error("Error generating caption:", error);
+    return "Failed to generate caption";
+  }
+};
+
 const createImageDoc = async (): Promise<ImageDoc | null> => {
   try {
     let base64Photo = null;
+    let caption = "";
 
-    // Convert the photo to base64 if it exists
     if (photo.value) {
       try {
         base64Photo = await fileToBase64(photo.value);
+        caption = await generateCaption(base64Photo);
+        console.log("Image caption:", caption);
       } catch (error) {
-        console.error("Error converting image to base64:", error);
+        console.error("Error converting image or generating caption:", error);
       }
     }
 
@@ -51,9 +78,10 @@ const createImageDoc = async (): Promise<ImageDoc | null> => {
         type: "denosie",
         step: "0",
         prompt: "0",
-        originalImage: base64Photo, //save photo string here!
+        originalImage: base64Photo,
         steppedImage: "",
         promptedImage: "",
+        caption, // Include the generated caption
       },
     });
     console.log(`Initial ImageDoc created successfully!`);
@@ -62,7 +90,7 @@ const createImageDoc = async (): Promise<ImageDoc | null> => {
     // Reset the form
     emptyForm();
 
-    return response as ImageDoc; // Return the created ImageDoc
+    return response as ImageDoc;
   } catch (error) {
     console.error("Error creating ImageDoc:", error);
     return null;
@@ -78,19 +106,16 @@ const emptyForm = () => {
 const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target && target.files && target.files.length > 0) {
-    photo.value = target.files[0]; // Assign the new file
+    photo.value = target.files[0];
   } else {
-    photo.value = null; // Reset if no file is selected
+    photo.value = null;
   }
 };
 </script>
 
 <template>
   <form @submit.prevent="createImageDoc">
-    <!-- Input for the image -->
     <input id="photo" type="file" accept="image/*" @change="handleFileChange" />
-
-    <!-- Submit button is disabled if no photo is selected -->
     <button type="submit" class="pure-button-primary pure-button" :disabled="!photo">Upload</button>
   </form>
 </template>
