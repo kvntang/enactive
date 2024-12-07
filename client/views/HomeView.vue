@@ -70,13 +70,13 @@ const canvasMessage = computed(() => (props.is1DCanvas ? "1D Canvas" : "2D Canva
 
     <div class="tips-panel">
       <h2>User Tips</h2>
-      <body>
+      <div>
         - hold "shift" and drag to navigate the canvas
         <br />
         - double click to select a box
         <br />
         - press "esc" to exist dragging mode
-      </body>
+      </div>
     </div>
 
     <div class="upload-panel">

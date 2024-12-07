@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Imaging = exports.Friending = exports.Posting = exports.Authing = exports.Sessioning = void 0;
 const authenticating_1 = __importDefault(require("./concepts/authenticating"));
 const friending_1 = __importDefault(require("./concepts/friending"));
-const image_1 = __importDefault(require("concepts/image"));
+const image_1 = __importDefault(require("./concepts/image"));
 const posting_1 = __importDefault(require("./concepts/posting"));
 const sessioning_1 = __importDefault(require("./concepts/sessioning"));
 // The app is a composition of concepts instantiated here
