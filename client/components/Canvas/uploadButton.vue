@@ -64,6 +64,7 @@ const createImageDoc = async (): Promise<ImageDoc | null> => {
         base64Photo = await fileToBase64(photo.value);
         caption = await generateCaption(base64Photo); //get caption
         console.log("Image caption:", caption);
+        
       } catch (error) {
         console.error("Error converting image or generating caption:", error);
       }

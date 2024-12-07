@@ -33,7 +33,7 @@ export default class ImageConcept {
       originalImage: originalImage || "",
       steppedImage: steppedImage || "",
       promptedImage: promptedImage || "",
-      caption: caption || "", 
+      caption: caption || "kevin", 
     });
   
     return { msg: "Image successfully created!", image: await this.images.readOne({ _id }) };
