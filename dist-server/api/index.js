@@ -42,6 +42,8 @@ exports.app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
 exports.app.use((0, morgan_1.default)("dev"));
 exports.app.use((0, cors_1.default)()); // https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+// app.use(express.json()); // Enable parsing JSON in requests and responses.
+// app.use(express.urlencoded({ extended: false })); // Also enable URL encoded request and responses.
 // Increase the size limits for JSON and URL-encoded payloads
 exports.app.use(express_1.default.json({ limit: "50mb" })); // Increase JSON body size limit to 50MB
 exports.app.use(express_1.default.urlencoded({ extended: true, limit: "50mb" })); // Increase URL-encoded body size limit to 50MB
