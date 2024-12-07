@@ -73,9 +73,9 @@ class Routes {
    * Create a new ImageDoc.
    */
   @Router.post("/images")
-  async createImage(session: SessionDoc, parent: ObjectId, coordinate: string, type: string, step: string, prompt?: string, originalImage?: string, steppedImage?: string, promptedImage?: string) {
+  async createImage(session: SessionDoc, parent: ObjectId, coordinate: string, type: string, step: string, prompt?: string, originalImage?: string, steppedImage?: string, promptedImage?: string, caption?:string) {
     const author = Sessioning.getUser(session);
-    const created = await Imaging.create(author, parent, coordinate, type, step, prompt, originalImage, steppedImage, promptedImage);
+    const created = await Imaging.create(author, parent, coordinate, type, step, prompt, originalImage, steppedImage, promptedImage, caption);
     return { msg: created.msg, image: created.image };
   }
 
