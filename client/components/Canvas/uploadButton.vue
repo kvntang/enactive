@@ -62,7 +62,7 @@ const createImageDoc = async (): Promise<ImageDoc | null> => {
     if (photo.value) {
       try {
         base64Photo = await fileToBase64(photo.value);
-        caption = await generateCaption(base64Photo);
+        caption = await generateCaption(base64Photo); //get caption
         console.log("Image caption:", caption);
       } catch (error) {
         console.error("Error converting image or generating caption:", error);
@@ -81,7 +81,7 @@ const createImageDoc = async (): Promise<ImageDoc | null> => {
         originalImage: base64Photo,
         steppedImage: "",
         promptedImage: "",
-        caption, // Include the generated caption
+        caption: caption, // Include the generated caption
       },
     });
     console.log(`Initial ImageDoc created successfully!`);

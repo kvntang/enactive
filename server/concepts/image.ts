@@ -26,29 +26,7 @@ export default class ImageConcept {
     this.images = new DocCollection<ImageDoc>(collectionName);
   }
 
-  private async generateCaption(imageBase64: string): Promise<string> {
-    try {
-      const base64Data = imageBase64.split(",")[1];
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = Array.from(byteCharacters, char => char.charCodeAt(0));
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: "image/jpeg" });
-
-      const result = await inference.imageToText({
-        data: blob,
-        model: "nlpconnect/vit-gpt2-image-captioning",
-      });
-
-      return result.generated_text;
-    } catch (error) {
-      console.error("Error generating caption:", error);
-      return "Failed to generate caption";
-    }
-  }
-
-  async create(author: ObjectId, parent: ObjectId, coordinate: string, type: string, step: string, prompt?: string, originalImage?: string, steppedImage?: string, promptedImage?: string) {
-    const caption = originalImage ? await this.generateCaption(originalImage) : "";
-    
+  async create(author: ObjectId, parent: ObjectId, coordinate: string, type: string, step: string, prompt?: string, originalImage?: string, steppedImage?: string, promptedImage?: string, caption?:string) {    
     const _id = await this.images.createOne({
       author,
       parent,
