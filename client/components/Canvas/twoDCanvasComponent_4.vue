@@ -41,7 +41,7 @@ const canvasContainer = ref(null);
  * @param promptIndex - The prompt index calculated from angle deviation.
  * @returns The created ImageDoc's data.
  */
-const createImageDoc = async (parentId: string, coordinate: string, type: string, step: string, promptIndex: number): Promise<ImageDoc | null> => {
+const createImageDoc = async (parentId: string, coordinate: string, type: string, step: string, promptIndex: number, caption?: string, promptList?: string): Promise<ImageDoc | null> => {
   try {
     const authorId = "mocked-author-id"; // Mocked user
     const response = await fetchy("/api/images", "POST", {
@@ -209,7 +209,7 @@ onMounted(() => {
               originalImage: image.originalImage,
               p5Image: image.originalImage ? p.loadImage(image.originalImage) : null,
               caption: image.caption,
-              promptList: image.promptList,
+              promptList: image.promptList || "",
             });
           });
 
@@ -372,16 +372,18 @@ onMounted(() => {
 
           // Draw the angle index
           const { promptIndex } = getPromptIndex(point.type, snappedAngleDegrees);
-          const lastImage = staticPositions[staticPositions.length - 1]; 
-          const cleanedPromptList = lastImage.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
-          const prompts = cleanedPromptList.split(",").map(word => word.trim());
-          const promptWord = prompts[promptIndex];
-          const gridSize = 70; 
-          const newY = lastImage.pos.y + 50; // Define newY
-          p.textSize(25);
-          p.fill(255);
-          p.text(promptWord, lineEnd.x, lineEnd.y);
-          p.text(point.type, point.pos.x, point.pos.y - dynamicRadius - 30);
+
+          const selectedParent = staticPositions.find(sp => sp._id === selectedParentId);
+          if (selectedParent && selectedParent.promptList) {
+            const cleanedPromptList = selectedParent.promptList.replace(/^"|"$/g, "");
+            const prompts = cleanedPromptList.split(",").map(word => word.trim());
+            const promptWord = prompts[promptIndex];
+            
+            p.textSize(25);
+            p.fill(255);
+            p.text(promptWord, lineEnd.x, lineEnd.y);
+            p.text(point.type, point.pos.x, point.pos.y - dynamicRadius - 30);
+          }
         }
 
         p.pop();
@@ -561,7 +563,7 @@ onMounted(() => {
 
           console.log(`Parent ID is: ${parentId}`);
 
-          const createdImageDoc = await createImageDoc(parentId, coordinate, point.type, stepString, point.promptIndex);
+          const createdImageDoc = await createImageDoc(parentId, coordinate, point.type, stepString, point.promptIndex, point.caption, point.promptList);
 
           if (!createdImageDoc) {
             console.error("Failed to create new ImageDoc.");
@@ -587,6 +589,10 @@ onMounted(() => {
 
           if (clickedBox) {
             selectedParentId = clickedBox._id ?? null;
+          //   const selectedParent = props.images.find(img => img._id === selectedParentId);
+          // if (selectedParent) {
+          //   point.promptList = selectedParent.promptList;
+          // }
             console.log(`Selected parent ID: ${selectedParentId}`);
           }
         }

@@ -370,7 +370,15 @@ onMounted(() => {
           
           // Draw the preloaded image
           if (sp.p5Image) {
+            p.noStroke();
             p.image(sp.p5Image, sp.pos.x, sp.currentY, gridSize, gridSize);
+
+            if (sp._id === selectedParentId) {
+              p.stroke(255, 255, 0);
+              p.strokeWeight(1 / scaleFactor);
+              p.noFill();
+              p.rect(sp.pos.x, sp.currentY, gridSize, gridSize);
+            }
           } else {
             //Draw Main Box/image here!!!
             p.fill(squareColor);
@@ -678,6 +686,13 @@ onMounted(() => {
             console.log(`Select ID is: ${selectedParentId}`);
             break;
           }
+        }
+      };
+
+      p.keyPressed = () => {
+        if (p.key === "Escape" && isDragging) {
+          isDragging = false;
+          console.log("Drag operation canceled.");
         }
       };
 
