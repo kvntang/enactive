@@ -19,6 +19,8 @@ interface ImageDoc {
   promptedImage: string;
   _id: string;
   p5Image?: p5.Image;
+  caption: string;
+  promptList: string;
 }
 
 const props = defineProps<{
@@ -53,6 +55,8 @@ const createImageDoc = async (parentId: string, coordinate: string, type: string
         originalImage: "",
         steppedImage: "",
         promptedImage: "",
+        caption: "",
+        promptList: "",
       },
     });
     console.log(`ImageDoc created successfully! Coordinate: ${coordinate}, Type: ${type}, Step: ${step}, Prompt Index: ${promptIndex}`);
@@ -117,6 +121,8 @@ onMounted(() => {
         originalImage: string;
         parent_id?: string;
         p5Image?: p5.Image;
+        caption: string;
+        promptList: string;
       }[] = [];
 
       let currentColor: p5.Color;
@@ -147,7 +153,6 @@ onMounted(() => {
         const canvasHeight = p.windowHeight - 120;
         const canvas = p.createCanvas(canvasWidth, canvasHeight);
         canvas.parent(canvasContainer.value);
-
         ///1. Initialize the first ImageDoc if staticPositions is empty
         // Initival Vector
         initialPosition = p.createVector(0, 0); // Start at (0, 0) in world coordinates
@@ -203,6 +208,8 @@ onMounted(() => {
               parent_id: image.parent,
               originalImage: image.originalImage,
               p5Image: image.originalImage ? p.loadImage(image.originalImage) : null,
+              caption: image.caption,
+              promptList: image.promptList,
             });
           });
 
@@ -295,16 +302,20 @@ onMounted(() => {
 
           p.fill(255);
           p.textAlign(p.CENTER, p.CENTER);
-          // Display objectID and type/prompt index above the square
-          if (sp.promptIndex !== undefined && sp.promptIndex > 0) {
-            // p.text(sp._id, sp.pos.x, sp.pos.y - 30); /* Display objectID */
-            // p.text(`Parent: ${sp.parent_id}`, sp.pos.x, sp.pos.y - 50);
-            p.text(`${sp.type === "noise" ? "Noised" : "Denoised"}`, sp.pos.x, sp.pos.y - 20);
-            p.text(`${sp.promptIndex}`, sp.pos.x, sp.pos.y);
-          } else {
-            p.text(sp._id, sp.pos.x, sp.pos.y - 30); /* Display objectID */
-            p.text(sp.type === "noise" ? "Noised" : "Denoised", sp.pos.x, sp.pos.y - 20);
+
+          // In draw function, modify the promptList parsing:
+          if (sp.promptList) {
+            try {
+              const prompts = JSON.parse(sp.promptList);
+              const promptWord = prompts[sp.promptIndex?.toString() || ''] || '';
+              p.text(promptWord, sp.pos.x, sp.pos.y);
+            } catch (e) {
+              console.log(`Error parsing promptList for ImageDoc ID: ${sp._id}`);
+            } 
+            // display caption at the bottom      
+            p.text(sp.caption, sp.pos.x, sp.pos.y + 50);
           }
+
         });
 
         // Draw the moving point when dragging or moving
@@ -362,7 +373,14 @@ onMounted(() => {
 
           // Draw the angle index
           const { promptIndex } = getPromptIndex(point.type, snappedAngleDegrees);
-          p.text(promptIndex, lineEnd.x, lineEnd.y);
+          // p.text(promptIndex, lineEnd.x, lineEnd.y);)
+          // Get the corresponding prompt word
+          const lastImage = staticPositions[staticPositions.length - 1]; 
+          const prompts = JSON.parse(lastImage.promptList || '{}');
+          const promptWord = prompts[promptIndex.toString()] || 'Unknown';
+          const gridSize = 70; 
+          const newY = lastImage.pos.y + 50; // Define newY
+          p.text(promptWord, lastImage.pos.x + gridSize / 2, newY + gridSize / 2);
           p.textSize(14);
           p.text("Pick a prompt! The lower the number, \n the more similar to the original prompt.", point.pos.x, point.pos.y - dynamicRadius - 30);
         }
@@ -395,6 +413,9 @@ onMounted(() => {
                 _id: newImage._id,
                 parent_id: newImage.parent,
                 originalImage: newImage.originalImage,
+                p5Image: newImage.originalImage ? p.loadImage(newImage.originalImage) : null,
+                caption: newImage.caption,
+                promptList: newImage.promptList,
               });
 
               // Automatically select the new ImageDoc as the parent
@@ -413,42 +434,35 @@ onMounted(() => {
       // Mouse interaction functions
       p.mousePressed = (event: MouseEvent) => {
         if (mouseInCanvas()) {
-          // Check if clicking on the selected parent box to shoot
-          const selectedParent = staticPositions.find((sp) => sp._id === selectedParentId);
-          if (selectedParent) {
-            const parentScreenPos = screenPos(selectedParent.pos);
-            const distance = p.dist(p.mouseX, p.mouseY, parentScreenPos.x, parentScreenPos.y);
-            if (distance < 20 * scaleFactor) {
-              // Start shooting
-              isDraggingNew = true;
-              point.pos = selectedParent.pos.copy();
-              console.log(`Started shooting from parent ID: ${selectedParentId}`);
-            }
-          }
-
-          if (p.keyIsDown(p.SHIFT)) {
-            // Start panning
+          if (p.keyIsDown(p.SHIFT)) { // Ensure SHIFT is pressed
             isPanning = true;
             panStartX = p.mouseX;
             panStartY = p.mouseY;
             panStartTranslateX = translateX;
             panStartTranslateY = translateY;
-            console.log("Started panning");
+            return; // Prevent other interactions when panning
+          }
+
+          // Existing shooting logic
+          const selectedParent = staticPositions.find((sp) => sp._id === selectedParentId);
+          if (selectedParent) {
+            const parentScreenPos = screenPos(selectedParent.pos);
+            const distance = p.dist(p.mouseX, p.mouseY, parentScreenPos.x, parentScreenPos.y);
+            if (distance < 20 * scaleFactor) {
+              isDraggingNew = true;
+              point.pos = selectedParent.pos.copy();
+              console.log(`Started shooting from parent ID: ${selectedParentId}`);
+            }
           }
         }
       };
 
       p.mouseDragged = (event: MouseEvent) => {
         if (isPanning) {
-          // Calculate the amount of movement
           let dx = (p.mouseX - panStartX) / scaleFactor;
           let dy = (p.mouseY - panStartY) / scaleFactor;
-
-          // Update the translation
           translateX = panStartTranslateX + dx;
           translateY = panStartTranslateY + dy;
-
-          // Prevent default dragging behavior within the canvas
           event.preventDefault();
         }
 
@@ -479,6 +493,7 @@ onMounted(() => {
         if (isPanning) {
           isPanning = false;
           console.log("Stopped panning");
+          return;
         }
 
         // Finish dragging to create new ImageDoc
