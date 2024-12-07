@@ -10,10 +10,13 @@ import { fetchy } from "../utils/fetchy.js";
 
 // Define props
 const props = defineProps(["is1DCanvas"]);
-
 const images = ref([]);
 const loading = ref(false); // Loading state
 const error = ref<string | null>(null); // Explicitly define the type as string or null
+// const showUploadButton = ref(true);
+const showUploadButton = computed(() => {
+  return isLoggedIn.value && images.value.length === 0;
+});
 
 // Use store
 const { currentUsername, currentUserID, isLoggedIn } = storeToRefs(useUserStore());
@@ -25,7 +28,8 @@ async function fetchImages() {
   try {
     const result = await fetchy(`/api/images/author/${currentUserID.value}`, "GET");
     console.log("Fetched images:", result);
-    images.value = result.images || []; // Assign the `images` array from the result
+    images.value = result.images || []; 
+    // showUploadButton.value = images.value.length === 0; // Key change here
   } catch (err) {
     error.value = "Failed to load images. Please try again later.";
     console.error("Error fetching images:", err);
@@ -42,7 +46,10 @@ onMounted(() => {
 });
 
 function refreshImages() {
-  fetchImages().catch((err) => {
+  fetchImages().then(() => {
+    // showUploadButton.value = images.value.length === 0;
+    console.log("Images updated, showUploadButton:", showUploadButton.value);
+  }).catch((err) => {
     console.error("Error during refreshImages:", err);
   });
 }
@@ -79,21 +86,38 @@ const canvasMessage = computed(() => (props.is1DCanvas ? "1D Canvas" : "2D Canva
       </div>
     </div>
 
-    <div class="upload-panel">
+    <!-- <div class="upload-panel">
+      <h2>Upload an image to start!</h2>
+      <uploadButton @refreshImages="refreshImages" />
+    </div> -->
+
+    <!-- Show Canvas only if an image has been uploaded.  -->
+    <div v-if="showUploadButton && !isLoggedIn" class="upload-panel">
       <h2>Upload an image to start!</h2>
       <uploadButton @refreshImages="refreshImages" />
     </div>
 
-    <!-- Show Canvas only if an image has been uploaded.  -->
-
-    <!-- if (upload) {show imageUploader} -->
-
-    <!-- if (showCanvas) show Canvas-->
-    <!-- Canvas Components -->
+    <!-- Canvas Components
     <section v-if="isLoggedIn">
       <section v-if="loading">Loading images...</section>
       <section v-else-if="error">{{ error }}</section>
       <template v-else>
+        <oneDCanvasComponent v-if="is1DCanvas" :images="images" @refreshImages="refreshImages" />
+        <twoDCanvasComponent v-else :images="images" @refreshImages="refreshImages" />
+      </template>
+    </section>
+  </main>
+</template> -->
+    <section v-if="isLoggedIn">
+      <section v-if="loading">Loading images...</section>
+      <section v-else-if="error">{{ error }}</section>
+      <template v-else>
+        <!-- If no images, show upload panel -->
+        <div v-if="images.length === 0" class="upload-panel">
+          <h2>Upload an image to start!</h2>
+          <uploadButton @refreshImages="refreshImages" />
+        </div>
+
         <oneDCanvasComponent v-if="is1DCanvas" :images="images" @refreshImages="refreshImages" />
         <twoDCanvasComponent v-else :images="images" @refreshImages="refreshImages" />
       </template>
