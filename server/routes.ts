@@ -92,6 +92,40 @@ class Routes {
     await Imaging.deleteAllByAuthor(author); // Imaging is your concept class
     return { msg: "All images deleted successfully!" };
   }
+
+  @Router.post("/chatgpt")
+  async handleChatGPTRequest(prompt: string) {
+    if (!prompt || prompt.trim().length === 0) {
+      throw new Error("Prompt cannot be empty");
+    }
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4", // Specify the model
+        messages: [
+          { role: "user", content: `Strictly generate a JSON object with keys 0-35 containing words similar to this scene: ${prompt}. Ensure 0 is most similar. Make sure you only give one word response for each. Format exactly like:
+                {{
+                  "0": "most similar word",
+                  "1": "second similar word",
+                  ...
+                  "35": "least similar word"
+                }},` }
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API Error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return { response: data.choices[0].message.content };
+  }
 }
 
 /** The web app. */

@@ -54,11 +54,24 @@ const generateCaption = async (imageBase64: string): Promise<string> => {
   }
 };
 
+async function getChatGPTResponse(prompt: string) {
+  try {
+    const result = await fetchy("/api/chatgpt", "POST", {
+      body: { prompt }, // Send the prompt in the body
+    });
+    return result.response;
+  } catch (error) {
+    console.error("Error fetching ChatGPT response:", error);
+    throw error;
+  }
+}
+
 const createImageDoc = async (): Promise<ImageDoc | null> => {
   try {
     let base64Photo = null;
     let caption = "";
 
+    //1.  get caption
     if (photo.value) {
       try {
         base64Photo = await fileToBase64(photo.value);
@@ -69,6 +82,11 @@ const createImageDoc = async (): Promise<ImageDoc | null> => {
         console.error("Error converting image or generating caption:", error);
       }
     }
+
+    //2.  get 36 prompts in a list
+    getChatGPTResponse(caption)
+    .then((response) => console.log(response))
+    .catch((error) => console.error(error));
 
     //Create Initial ImageDoc
     const response = await fetchy("/api/images", "POST", {

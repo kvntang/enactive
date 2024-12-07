@@ -66,6 +66,7 @@ let Routes = (() => {
     let _createImage_decorators;
     let _getImagesByAuthor_decorators;
     let _deleteImagesByAuthor_decorators;
+    let _handleChatGPTRequest_decorators;
     return _a = class Routes {
             // Synchronize the concepts from `app.ts`.
             getSessionUser(session) {
@@ -126,10 +127,10 @@ let Routes = (() => {
             /**
              * Create a new ImageDoc.
              */
-            createImage(session, parent, coordinate, type, step, prompt, originalImage, steppedImage, promptedImage) {
+            createImage(session, parent, coordinate, type, step, prompt, originalImage, steppedImage, promptedImage, caption) {
                 return __awaiter(this, void 0, void 0, function* () {
                     const author = app_1.Sessioning.getUser(session);
-                    const created = yield app_1.Imaging.create(author, parent, coordinate, type, step, prompt, originalImage, steppedImage, promptedImage);
+                    const created = yield app_1.Imaging.create(author, parent, coordinate, type, step, prompt, originalImage, steppedImage, promptedImage, caption);
                     return { msg: created.msg, image: created.image };
                 });
             }
@@ -145,6 +146,37 @@ let Routes = (() => {
                     const author = new mongodb_1.ObjectId(authorId);
                     yield app_1.Imaging.deleteAllByAuthor(author); // Imaging is your concept class
                     return { msg: "All images deleted successfully!" };
+                });
+            }
+            handleChatGPTRequest(prompt) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    if (!prompt || prompt.trim().length === 0) {
+                        throw new Error("Prompt cannot be empty");
+                    }
+                    const response = yield fetch("https://api.openai.com/v1/chat/completions", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                        },
+                        body: JSON.stringify({
+                            model: "gpt-4", // Specify the model
+                            messages: [
+                                { role: "user", content: `Strictly generate a JSON object with keys 0-35 containing words similar to this scene: ${prompt}. Ensure 0 is most similar. Make sure you only give one word response for each. Format exactly like:
+                {{
+                  "0": "most similar word",
+                  "1": "second similar word",
+                  ...
+                  "35": "least similar word"
+                }},` }
+                            ],
+                        }),
+                    });
+                    if (!response.ok) {
+                        throw new Error(`OpenAI API Error: ${response.statusText}`);
+                    }
+                    const data = yield response.json();
+                    return { response: data.choices[0].message.content };
                 });
             }
             constructor() {
@@ -165,6 +197,7 @@ let Routes = (() => {
             _createImage_decorators = [router_1.Router.post("/images")];
             _getImagesByAuthor_decorators = [router_1.Router.get("/images/author/:author")];
             _deleteImagesByAuthor_decorators = [router_1.Router.delete("/images/author/:authorId")];
+            _handleChatGPTRequest_decorators = [router_1.Router.post("/chatgpt")];
             __esDecorate(_a, null, _getSessionUser_decorators, { kind: "method", name: "getSessionUser", static: false, private: false, access: { has: obj => "getSessionUser" in obj, get: obj => obj.getSessionUser }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getUsers_decorators, { kind: "method", name: "getUsers", static: false, private: false, access: { has: obj => "getUsers" in obj, get: obj => obj.getUsers }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getUser_decorators, { kind: "method", name: "getUser", static: false, private: false, access: { has: obj => "getUser" in obj, get: obj => obj.getUser }, metadata: _metadata }, null, _instanceExtraInitializers);
@@ -177,6 +210,7 @@ let Routes = (() => {
             __esDecorate(_a, null, _createImage_decorators, { kind: "method", name: "createImage", static: false, private: false, access: { has: obj => "createImage" in obj, get: obj => obj.createImage }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getImagesByAuthor_decorators, { kind: "method", name: "getImagesByAuthor", static: false, private: false, access: { has: obj => "getImagesByAuthor" in obj, get: obj => obj.getImagesByAuthor }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _deleteImagesByAuthor_decorators, { kind: "method", name: "deleteImagesByAuthor", static: false, private: false, access: { has: obj => "deleteImagesByAuthor" in obj, get: obj => obj.deleteImagesByAuthor }, metadata: _metadata }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _handleChatGPTRequest_decorators, { kind: "method", name: "handleChatGPTRequest", static: false, private: false, access: { has: obj => "handleChatGPTRequest" in obj, get: obj => obj.handleChatGPTRequest }, metadata: _metadata }, null, _instanceExtraInitializers);
             if (_metadata) Object.defineProperty(_a, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
         })(),
         _a;
