@@ -21,6 +21,7 @@ interface ImageDoc {
   _id?: string; // Optional, assigned after creation
   p5Image?: p5.Image; // store preloaded p5.Image
   caption: string;
+  promptList: string;
 }
 
 // from parent code
@@ -49,6 +50,8 @@ const createImageDoc = async (parentId: string, coordinate: string, type: string
         originalImage: "",
         steppedImage: "",
         promptedImage: "",
+        caption: "",
+        promptList: "",
       },
     });
     console.log(`ImageDoc created successfully! ParentID: ${parentId}, Coordinate: ${coordinate}, Type: ${type}, Step: ${step}, Prompt Index: ${promptIndex}`);
@@ -88,6 +91,7 @@ onMounted(() => {
         animationDuration?: number;
         p5Image?: p5.Image;
         caption?: string;
+        promptList?: string;
       }[] = [];
 
       let isDragging = false;
@@ -215,6 +219,7 @@ onMounted(() => {
               originalImage: image.originalImage,
               p5Image: preloadedImage,
               caption: image.caption,
+              promptList: image.promptList,
             });
 
             // Recursively set positions for children
@@ -267,6 +272,8 @@ onMounted(() => {
               p.textAlign(p.CENTER, p.CENTER); // Center the text
               let text = `${child.type} ${child.step}`; //concat
               p.text(text, midPointX, midPointY - 15); // Adjust Y position to place text above the line
+              // create caption at the bottom of the image
+              p.text(child.caption, child.pos.x + gridSize / 2 +50, child.currentY + gridSize / 2 + 20);
 
               // Draw a triangle to indicate the direction
               let triangleSize = 5 / scaleFactor; // Adjust size based on zoom level
@@ -368,12 +375,26 @@ onMounted(() => {
             p.image(sp.p5Image, sp.pos.x, sp.currentY, gridSize, gridSize);
           }
 
-          // Display the prompt index on top of the image
+          // Display the prompt index in the middle of the image -------------------------------------------------
           p.fill(255);
-          p.text(sp.promptIndex, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2);
-
-          p.text(sp.caption, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2 - 20); //display caption
-
+          // display promptList
+          if (sp.promptList && sp.promptIndex !== undefined) {
+            try {
+              const prompts = JSON.parse(sp.promptList);
+              console.log(`ImageDoc ID: ${sp._id}, Prompts:`, prompts);
+              console.log(`Prompt Index: ${sp.promptIndex}`);
+              const promptWord = prompts[sp.promptIndex.toString()] || 'Unknown';
+              console.log(`Prompt Word: ${promptWord}`);
+              
+              p.fill(255);
+              p.textAlign(p.CENTER, p.CENTER);
+              p.text(promptWord, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2);
+            } catch (e) {
+              console.error(`Error parsing promptList for ImageDoc ID: ${sp._id}`, e);
+            }
+          }
+          // Display the caption at the bottom of the image -------------------------------------------------
+          p.text(sp.caption, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2 + 50);
           
         }
 
@@ -414,7 +435,10 @@ onMounted(() => {
 
             // Display prompt index (set based on current promptSteps)
             p.fill(255);
-            p.text(promptSteps, lastImage.pos.x + gridSize / 2, lastImage.pos.y + (gridSize + padding) * promptSteps + gridSize / 2);
+            // p.text(promptSteps, lastImage.pos.x + gridSize / 2, lastImage.pos.y + (gridSize + padding) * promptSteps + gridSize / 2);
+            // const promptIndex = lastImage.promptIndex !== undefined ? lastImage.promptIndex : 0;
+            const promptWord = lastImage.promptList ? JSON.parse(lastImage.promptList)[promptSteps.toString()] || 'Unknown' : 'Unknown';
+            p.text(promptWord, lastImage.pos.x + gridSize / 2, newY + gridSize / 2);
           } else if (Math.abs(dragDistanceX) > gridSize / 2) {
             // Horizontal dragging (noise/denoise)
             let steps = Math.floor(Math.abs(dragDistanceX) / stepDistance);
