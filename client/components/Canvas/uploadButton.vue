@@ -85,6 +85,7 @@ const createImageDoc = async (): Promise<ImageDoc | null> => {
       },
     });
     console.log(`Initial ImageDoc created successfully!`);
+    console.log("Image caption:", caption);
     emit("refreshImages"); // Let the parent know to refresh the images
 
     // Reset the form

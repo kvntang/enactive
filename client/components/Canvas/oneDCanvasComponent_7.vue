@@ -20,6 +20,7 @@ interface ImageDoc {
   promptedImage: string;
   _id?: string; // Optional, assigned after creation
   p5Image?: p5.Image; // store preloaded p5.Image
+  caption: string;
 }
 
 // from parent code
@@ -86,6 +87,7 @@ onMounted(() => {
         animationStartTime?: number;
         animationDuration?: number;
         p5Image?: p5.Image;
+        caption?: string;
       }[] = [];
 
       let isDragging = false;
@@ -212,6 +214,7 @@ onMounted(() => {
               currentY: pos.y,
               originalImage: image.originalImage,
               p5Image: preloadedImage,
+              caption: image.caption,
             });
 
             // Recursively set positions for children
@@ -368,6 +371,10 @@ onMounted(() => {
           // Display the prompt index on top of the image
           p.fill(255);
           p.text(sp.promptIndex, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2);
+
+          p.text(sp.caption, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2 - 20); //display caption
+
+          
         }
 
         if (isDragging) {
@@ -511,6 +518,7 @@ onMounted(() => {
             animationStartTime?: number;
             animationDuration?: number;
             p5Image?: p5.Image;
+            caption?: string;
           };
 
           if (Math.abs(dragDistanceY) > Math.abs(dragDistanceX) && dragDistanceY > gridSize / 2) {
