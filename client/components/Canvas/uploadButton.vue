@@ -17,6 +17,7 @@ interface ImageDoc {
   steppedImage: string;
   promptedImage: string;
   _id: string;
+  prompt_list: string;
 }
 
 // Form input fields
@@ -65,57 +66,71 @@ async function getChatGPTResponse(prompt: string) {
     throw error;
   }
 }
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const createImageDoc = async (): Promise<ImageDoc | null> => {
   try {
     let base64Photo = null;
     let caption = "";
 
-    //1.  get caption
+    // 1. Get caption
     if (photo.value) {
       try {
         base64Photo = await fileToBase64(photo.value);
-        caption = await generateCaption(base64Photo); //get caption
+        caption = await generateCaption(base64Photo); // Get caption
         console.log("Image caption:", caption);
-        
       } catch (error) {
         console.error("Error converting image or generating caption:", error);
+        return null; // Exit early if there's an error with the caption
       }
     }
 
-    //2.  get 36 prompts in a list
-    getChatGPTResponse(caption)
-    .then((response) => console.log(response))
-    .catch((error) => console.error(error));
+    // 2. Get 36 prompts in a list
+    console.log("Waiting for ChatGPT response...");
+    let promptList = null;
+    
+    try {
+      promptList = await getChatGPTResponse(caption); // Wait for ChatGPT response
+      console.log("ChatGPT Response:", promptList);
+    } catch (error) {
+      console.error("Failed to get ChatGPT response:", error);
+      return null; // Exit early if there's an error with the ChatGPT response
+    }
 
-    //Create Initial ImageDoc
-    const response = await fetchy("/api/images", "POST", {
-      body: {
-        author: "mocked-author-id", // Mocked user
-        parent: "", // Parent ID is empty for the root node
-        coordinate: "50,50",
-        type: "denosie",
-        step: "0",
-        prompt: "0",
-        originalImage: base64Photo,
-        steppedImage: "",
-        promptedImage: "",
-        caption: caption, // Include the generated caption
-      },
-    });
-    console.log(`Initial ImageDoc created successfully!`);
-    console.log("Image caption:", caption);
-    emit("refreshImages"); // Let the parent know to refresh the images
+    // 3. Create Initial ImageDoc
+    try {
+      const response = await fetchy("/api/images", "POST", {
+        body: {
+          author: "mocked-author-id", // Mocked user
+          parent: "", // Parent ID is empty for the root node
+          coordinate: "50,50",
+          type: "denoise",
+          step: "0",
+          prompt: "0",
+          originalImage: base64Photo,
+          steppedImage: "",
+          promptedImage: "",
+          caption: caption, // Include the generated caption
+          prompt_list: promptList, // Include the ChatGPT response
+        },
+      });
 
-    // Reset the form
-    emptyForm();
-
-    return response as ImageDoc;
+      console.log(`Initial ImageDoc created successfully!`);
+      emit("refreshImages"); // Let the parent know to refresh the images
+      emptyForm(); // Reset the form
+      return response as ImageDoc; // Return the created ImageDoc
+    } catch (error) {
+      console.error("Error creating ImageDoc:", error);
+      return null;
+    }
   } catch (error) {
     console.error("Error creating ImageDoc:", error);
     return null;
   }
 };
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Function to reset the form fields
 const emptyForm = () => {

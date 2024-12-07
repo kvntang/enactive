@@ -127,10 +127,10 @@ let Routes = (() => {
             /**
              * Create a new ImageDoc.
              */
-            createImage(session, parent, coordinate, type, step, prompt, originalImage, steppedImage, promptedImage, caption) {
+            createImage(session, parent, coordinate, type, step, prompt, originalImage, steppedImage, promptedImage, caption, promptList) {
                 return __awaiter(this, void 0, void 0, function* () {
                     const author = app_1.Sessioning.getUser(session);
-                    const created = yield app_1.Imaging.create(author, parent, coordinate, type, step, prompt, originalImage, steppedImage, promptedImage, caption);
+                    const created = yield app_1.Imaging.create(author, parent, coordinate, type, step, prompt, originalImage, steppedImage, promptedImage, caption, promptList);
                     return { msg: created.msg, image: created.image };
                 });
             }
