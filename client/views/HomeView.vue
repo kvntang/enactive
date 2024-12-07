@@ -75,7 +75,7 @@ const canvasMessage = computed(() => (props.is1DCanvas ? "1D Canvas" : "2D Canva
         <br />
         - double click to select a box
         <br />
-        - press "esc" to exist dragging mode
+        - press "esc" to exist dragging mode.
       </div>
     </div>
 
