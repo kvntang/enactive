@@ -12,7 +12,8 @@
     "paths": {
       "@/*": ["./*"]
     },
-    "outDir": "../dist/client"
+    "outDir": "../dist/client",
+    "types": ["@types/p5"] // Add this line
   },
   "include": ["./**/*.ts", "./**/*.vue"]
 }
