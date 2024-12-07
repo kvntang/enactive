@@ -91,7 +91,7 @@ onMounted(() => {
         animationDuration?: number;
         p5Image?: p5.Image;
         caption?: string;
-        promptList?: string;
+        promptList: string;
       }[] = [];
 
       let isDragging = false;
@@ -357,7 +357,7 @@ onMounted(() => {
           }
           // PURPLE BOX ------------------------------------------------------------------
 
-          p.fill(squareColor);
+          
 
           // Highlight the last image with a yellow outline
           if (sp === staticPositions[staticPositions.length - 1]) {
@@ -367,12 +367,14 @@ onMounted(() => {
             p.noStroke(); // No stroke for other squares
           }
 
-          //Draw Main Box/image here!!!
-          p.rect(sp.pos.x, sp.currentY, gridSize, gridSize); //purple box
-
+          
           // Draw the preloaded image
           if (sp.p5Image) {
             p.image(sp.p5Image, sp.pos.x, sp.currentY, gridSize, gridSize);
+          } else {
+            //Draw Main Box/image here!!!
+            p.fill(squareColor);
+            p.rect(sp.pos.x, sp.currentY, gridSize, gridSize); //purple box
           }
 
           // Display the prompt index in the middle of the image -------------------------------------------------
@@ -439,10 +441,11 @@ onMounted(() => {
 
             // Display prompt index (set based on current promptSteps)
             p.fill(255);
-            // p.text(promptSteps, lastImage.pos.x + gridSize / 2, lastImage.pos.y + (gridSize + padding) * promptSteps + gridSize / 2);
-            // const promptIndex = lastImage.promptIndex !== undefined ? lastImage.promptIndex : 0;
-            const promptWord = lastImage.promptList ? JSON.parse(lastImage.promptList)[promptSteps.toString()] || 'Unknown' : 'Unknown';
-            p.text(promptWord, lastImage.pos.x + gridSize / 2, newY + gridSize / 2);
+            const cleanedPromptList = lastImage.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
+            const prompts = cleanedPromptList.split(",").map(word => word.trim());
+            const promptWord = prompts[promptSteps]; //pick the right word
+            p.text(promptWord, lastImage.pos.x + gridSize * 2, newY + gridSize / 2);
+
           } else if (Math.abs(dragDistanceX) > gridSize / 2) {
             // Horizontal dragging (noise/denoise)
             let steps = Math.floor(Math.abs(dragDistanceX) / stepDistance);
@@ -547,6 +550,7 @@ onMounted(() => {
             animationDuration?: number;
             p5Image?: p5.Image;
             caption?: string;
+            promptList: string;
           };
 
           if (Math.abs(dragDistanceY) > Math.abs(dragDistanceX) && dragDistanceY > gridSize / 2) {
@@ -576,6 +580,7 @@ onMounted(() => {
               targetY: newY,
               animationStartTime: p.millis(),
               animationDuration: 500,
+              promptList: "kevin",
             };
 
             staticPositions.push(newImage);
@@ -621,6 +626,7 @@ onMounted(() => {
                 isAnimating: false,
                 currentY: lastImage.pos.y,
                 originalImage: lastImage.originalImage, // Add originalImage property
+                promptList: lastImage.promptList
               };
 
               staticPositions.push(newImage);
