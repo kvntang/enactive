@@ -1,37 +1,54 @@
+import { HfInference } from "@huggingface/inference";
 import { ObjectId } from "mongodb";
 
 import DocCollection, { BaseDoc } from "../framework/doc";
 import { NotAllowedError, NotFoundError } from "./errors";
 
+const inference = new HfInference("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");
+
 export interface ImageDoc extends BaseDoc {
   author: ObjectId;
   parent: ObjectId;
-  coordinate: string; // "x,y" position
+  coordinate: string;
   prompt: string;
-  type: string; // "red" or "blue" based on direction
-  step: string; // Launch distance as a string
-  originalImage: string; // Base64 string placeholder
-  steppedImage: string; // Base64 string placeholder
-  promptedImage: string; // Base64 string placeholder
+  type: string;
+  step: string;
+  originalImage: string;
+  steppedImage: string;
+  promptedImage: string;
+  caption?: string;
 }
 
-/**
- * concept: ImageManagement [Author]
- */
 export default class ImageConcept {
   public readonly images: DocCollection<ImageDoc>;
 
-  /**
-   * Create an instance of ImageConcept.
-   */
   constructor(collectionName: string) {
     this.images = new DocCollection<ImageDoc>(collectionName);
   }
 
-  /**
-   * Create a new ImageDoc.
-   */
+  private async generateCaption(imageBase64: string): Promise<string> {
+    try {
+      const base64Data = imageBase64.split(",")[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = Array.from(byteCharacters, char => char.charCodeAt(0));
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "image/jpeg" });
+
+      const result = await inference.imageToText({
+        data: blob,
+        model: "nlpconnect/vit-gpt2-image-captioning",
+      });
+
+      return result.generated_text;
+    } catch (error) {
+      console.error("Error generating caption:", error);
+      return "Failed to generate caption";
+    }
+  }
+
   async create(author: ObjectId, parent: ObjectId, coordinate: string, type: string, step: string, prompt?: string, originalImage?: string, steppedImage?: string, promptedImage?: string) {
+    const caption = originalImage ? await this.generateCaption(originalImage) : "";
+    
     const _id = await this.images.createOne({
       author,
       parent,
@@ -42,28 +59,20 @@ export default class ImageConcept {
       originalImage: originalImage || "",
       steppedImage: steppedImage || "",
       promptedImage: promptedImage || "",
+      caption, 
     });
-
+  
     return { msg: "Image successfully created!", image: await this.images.readOne({ _id }) };
   }
 
-  /**
-   * Get all images (optionally sorted).-
-   */
   async getImages() {
     return await this.images.readMany({}, { sort: { _id: -1 } });
   }
 
-  /**
-   * Get images by author ID.
-   */
   async getImagesByAuthor(author: ObjectId) {
     return await this.images.readMany({ author });
   }
 
-  /**
-   * Get a single image by its ID.
-   */
   async getImageById(_id: ObjectId) {
     const image = await this.images.readOne({ _id });
     if (!image) {
@@ -72,33 +81,21 @@ export default class ImageConcept {
     return image;
   }
 
-  /**
-   * Update an ImageDoc.
-   */
   async updateImage(_id: ObjectId, coordinate?: string, type?: string, step?: string, prompt?: string, originalImage?: string, steppedImage?: string, promptedImage?: string) {
     await this.images.partialUpdateOne({ _id }, { coordinate, type, step, prompt, originalImage, steppedImage, promptedImage });
     return { msg: "Image successfully updated!" };
   }
 
-  /**
-   * Delete an image by its ID.
-   */
   async deleteImageById(_id: ObjectId) {
     await this.images.deleteOne({ _id });
     return { msg: "Image deleted successfully!" };
   }
 
-  /**
-   * Delete all images by a specific author.
-   */
   async deleteAllByAuthor(author: ObjectId) {
     await this.images.deleteMany({ author });
     return { msg: "All images for this author have been deleted!" };
   }
 
-  /**
-   * Ensure the author matches the user for an image.
-   */
   async assertAuthorIsUser(_id: ObjectId, user: ObjectId) {
     const image = await this.images.readOne({ _id });
     if (!image) {
@@ -109,15 +106,12 @@ export default class ImageConcept {
     }
   }
 
-  /**
-   * Assert that an image exists.
-   */
   async assertImageExists(_id: ObjectId) {
     const image = await this.images.readOne({ _id });
     if (!image) {
       throw new NotFoundError(`Image with ID ${_id} does not exist!`);
     }
-    return image; // Return the image if it exists
+    return image;
   }
 }
 
