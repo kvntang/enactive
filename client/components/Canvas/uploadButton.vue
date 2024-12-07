@@ -17,7 +17,8 @@ interface ImageDoc {
   steppedImage: string;
   promptedImage: string;
   _id: string;
-  prompt_list: string;
+  caption: string; 
+  promptList: string;
 }
 
 // Form input fields
@@ -111,7 +112,7 @@ const createImageDoc = async (): Promise<ImageDoc | null> => {
           steppedImage: "",
           promptedImage: "",
           caption: caption, // Include the generated caption
-          prompt_list: promptList, // Include the ChatGPT response
+          promptList: promptList, // Include the ChatGPT response
         },
       });
 
