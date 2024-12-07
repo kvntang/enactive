@@ -11,6 +11,7 @@ export interface PostDoc extends BaseDoc {
   author: ObjectId;
   content: string;
   options?: PostOptions;
+  photo?: string; // Added the new field for the photo (Base64 string)
 }
 
 /**
@@ -26,8 +27,16 @@ export default class PostingConcept {
     this.posts = new DocCollection<PostDoc>(collectionName);
   }
 
-  async create(author: ObjectId, content: string, options?: PostOptions) {
-    const _id = await this.posts.createOne({ author, content, options });
+  // async create(author: ObjectId, content: string, options?: PostOptions) {
+  //   const _id = await this.posts.createOne({ author, content, options });
+  //   return { msg: "Post successfully created!", post: await this.posts.readOne({ _id }) };
+  // }
+
+  async create(author: ObjectId, content: string, options?: PostOptions, photo?: string) {
+    // console.log("Document to be created:", { author, content, options, photo }); // Log the document
+
+    // Add the photo (Base64) directly into the document if provided
+    const _id = await this.posts.createOne({ author, content, options, photo });
     return { msg: "Post successfully created!", post: await this.posts.readOne({ _id }) };
   }
 
@@ -39,6 +48,18 @@ export default class PostingConcept {
   async getByAuthor(author: ObjectId) {
     return await this.posts.readMany({ author });
   }
+
+  async getByPost(_id: ObjectId) {
+    // Fetch a single post and return it as an array with either one element or empty
+    const post = await this.posts.readOne({ _id });
+    return post ? [post] : []; // Wrap the post in an array or return an empty array
+  }
+
+  // async getByPost(_id: ObjectId): Promise<PostDoc | null> {
+  //   // Fetch a single post by its ObjectId
+  //   const post = await this.posts.readOne({ _id });
+  //   return post; // Returns the PostDoc or null
+  // }
 
   async update(_id: ObjectId, content?: string, options?: PostOptions) {
     // Note that if content or options is undefined, those fields will *not* be updated
@@ -60,6 +81,14 @@ export default class PostingConcept {
     if (post.author.toString() !== user.toString()) {
       throw new PostAuthorNotMatchError(user, _id);
     }
+  }
+
+  async assertPostExist(_id: ObjectId) {
+    const post = await this.posts.readOne({ _id });
+    if (!post) {
+      throw new NotFoundError(`Post with ID ${_id} does not exist!`);
+    }
+    return post; // Return the post if it exists
   }
 }
 

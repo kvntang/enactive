@@ -6,14 +6,13 @@ import { fetchy } from "@/utils/fetchy";
 export const useUserStore = defineStore(
   "user",
   () => {
-    const currentUsername = ref(""); // Stores the current user's username
-    const currentUserID = ref(""); // Stores the current user's ID
+    const currentUsername = ref("");
+    const currentUserStep = ref(""); // New state to track user's step size
 
     const isLoggedIn = computed(() => currentUsername.value !== "");
 
     const resetStore = () => {
       currentUsername.value = "";
-      currentUserID.value = "";
     };
 
     const createUser = async (username: string, password: string) => {
@@ -30,11 +29,11 @@ export const useUserStore = defineStore(
 
     const updateSession = async () => {
       try {
-        const { username, _id } = await fetchy("/api/session", "GET", { alert: false });
+        const { username, stepSize } = await fetchy("/api/session", "GET", { alert: false });
         currentUsername.value = username;
-        currentUserID.value = _id; // Update the current user ID
+        currentUserStep.value = stepSize || "";
       } catch {
-        resetStore();
+        currentUsername.value = "";
       }
     };
 
@@ -51,6 +50,10 @@ export const useUserStore = defineStore(
       await fetchy("/api/users/password", "PATCH", { body: { currentPassword, newPassword } });
     };
 
+    const updateUserStep = async (stepSize: string) => {
+      await fetchy("/api/users/step", "PATCH", { body: { stepSize } });
+    };
+
     const deleteUser = async () => {
       await fetchy("/api/users", "DELETE");
       resetStore();
@@ -58,7 +61,7 @@ export const useUserStore = defineStore(
 
     return {
       currentUsername,
-      currentUserID, // Expose the new variable
+      currentUserStep,
       isLoggedIn,
       createUser,
       loginUser,
@@ -67,6 +70,7 @@ export const useUserStore = defineStore(
       updateUserUsername,
       updateUserPassword,
       deleteUser,
+      updateUserStep,
     };
   },
   { persist: true },

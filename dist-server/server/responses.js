@@ -10,6 +10,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const app_1 = require("./app");
+const commenting_1 = require("./concepts/commenting");
 const friending_1 = require("./concepts/friending");
 const posting_1 = require("./concepts/posting");
 const router_1 = require("./framework/router");
@@ -40,6 +41,27 @@ class Responses {
         });
     }
     /**
+     * Convert CommentDoc into more readable format for the frontend by converting the author id into a username.
+     */
+    static comment(comment) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (!comment) {
+                return comment;
+            }
+            const author = yield app_1.Authing.getUserById(comment.author);
+            return Object.assign(Object.assign({}, comment), { author: author.username });
+        });
+    }
+    /**
+     * Same as {@link comment} but for an array of CommentDoc for improved performance.
+     */
+    static comments(comments) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const authors = yield app_1.Authing.idsToUsernames(comments.map((comment) => comment.author));
+            return comments.map((comment, i) => (Object.assign(Object.assign({}, comment), { author: authors[i] })));
+        });
+    }
+    /**
      * Convert FriendRequestDoc into more readable format for the frontend
      * by converting the ids into usernames.
      */
@@ -54,6 +76,10 @@ class Responses {
 }
 exports.default = Responses;
 router_1.Router.registerError(posting_1.PostAuthorNotMatchError, (e) => __awaiter(void 0, void 0, void 0, function* () {
+    const username = (yield app_1.Authing.getUserById(e.author)).username;
+    return e.formatWith(username, e._id);
+}));
+router_1.Router.registerError(commenting_1.CommentAuthorNotMatchError, (e) => __awaiter(void 0, void 0, void 0, function* () {
     const username = (yield app_1.Authing.getUserById(e.author)).username;
     return e.formatWith(username, e._id);
 }));

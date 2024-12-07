@@ -40,7 +40,8 @@ class AuthenticatingConcept {
     create(username, password) {
         return __awaiter(this, void 0, void 0, function* () {
             yield this.assertGoodCredentials(username, password);
-            const _id = yield this.users.createOne({ username, password });
+            const stepSize = "1"; // Default stepSize
+            const _id = yield this.users.createOne({ username, password, stepSize });
             return { msg: "User created successfully!", user: yield this.users.readOne({ _id }) };
         });
     }
@@ -134,6 +135,25 @@ class AuthenticatingConcept {
             yield this.assertUsernameUnique(username);
         });
     }
+    //
+    //
+    //
+    // New method to update stepSize
+    updateStepSize(_id, stepSize) {
+        return __awaiter(this, void 0, void 0, function* () {
+            yield this.users.partialUpdateOne({ _id }, { stepSize });
+            return { msg: `Step size updated to ${stepSize} successfully!`, stepSize };
+        });
+    }
+    // Helper method to validate stepSize
+    // private async assertStepSizeValid(stepSize: number) {
+    //   if (!Number.isInteger(stepSize) || stepSize < 1 || stepSize > 5) {
+    //     throw new BadValuesError("Step size must be an integer between 1 and 5.");
+    //   }
+    // }
+    //
+    //
+    //
     assertUsernameUnique(username) {
         return __awaiter(this, void 0, void 0, function* () {
             if (yield this.users.readOne({ username })) {

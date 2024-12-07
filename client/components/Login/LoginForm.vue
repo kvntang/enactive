@@ -8,102 +8,34 @@ const password = ref("");
 const { loginUser, updateSession } = useUserStore();
 
 async function login() {
-  try {
-    await loginUser(username.value, password.value);
-    await updateSession();
-    void router.push({ name: "Home" });
-  } catch (error) {
-    // Handle login error (optional)
-    console.error("Login failed:", error);
-  }
+  await loginUser(username.value, password.value);
+  void updateSession();
+  void router.push({ name: "Home" });
 }
 </script>
 
 <template>
-  <form @submit.prevent="login" class="form">
+  <form class="pure-form pure-form-aligned" @submit.prevent="login">
+    <h3>Login</h3>
     <fieldset>
-      <legend>Login</legend>
-      <div class="form-group">
-        <input
-          type="text"
-          placeholder="Username"
-          v-model.trim="username"
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          v-model.trim="password"
-          required
-        />
-        <button type="submit" class="primary-button">Login</button>
+      <div class="pure-control-group">
+        <label for="aligned-name">Username</label>
+        <input v-model.trim="username" type="text" id="aligned-name" placeholder="Username" required />
+      </div>
+      <div class="pure-control-group">
+        <label for="aligned-password">Password</label>
+        <input type="password" v-model.trim="password" id="aligned-password" placeholder="Password" required />
+      </div>
+      <div class="pure-controls">
+        <button type="submit" class="pure-button pure-button-primary">Submit</button>
       </div>
     </fieldset>
   </form>
 </template>
 
 <style scoped>
-.form {
-  width: 100%;
-  max-width: 400px;
-  background: #2b2b2b;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-fieldset {
-  border: none;
-  padding: 0;
-  margin: 0;
-}
-
-legend {
-  font-size: 1.4rem;
-  margin-bottom: 15px;
-  color: #f0f0f0;
-  text-align: center;
-}
-
-.form-group {
+h3 {
   display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-input {
-  padding: 12px 15px;
-  font-size: 1rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background: #fff;
-  transition: border-color 0.3s ease;
-}
-
-input:focus {
-  border-color: #007bff;
-  outline: none;
-}
-
-.primary-button {
-  padding: 12px;
-  font-size: 1rem;
-  background: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.primary-button:hover {
-  background: #0056b3;
-}
-
-@media (max-width: 480px) {
-  .form {
-    padding: 20px;
-  }
+  justify-content: center;
 }
 </style>

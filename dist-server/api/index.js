@@ -15,23 +15,13 @@ var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (
 }) : function(o, v) {
     o["default"] = v;
 });
-var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
-        ownKeys = Object.getOwnPropertyNames || function (o) {
-            var ar = [];
-            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
-            return ar;
-        };
-        return ownKeys(o);
-    };
-    return function (mod) {
-        if (mod && mod.__esModule) return mod;
-        var result = {};
-        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
-        __setModuleDefault(result, mod);
-        return result;
-    };
-})();
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -52,8 +42,6 @@ exports.app = (0, express_1.default)();
 const PORT = process.env.PORT || 3000;
 exports.app.use((0, morgan_1.default)("dev"));
 exports.app.use((0, cors_1.default)()); // https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
-// app.use(express.json()); // Enable parsing JSON in requests and responses.
-// app.use(express.urlencoded({ extended: false })); // Also enable URL encoded request and responses.
 // Increase the size limits for JSON and URL-encoded payloads
 exports.app.use(express_1.default.json({ limit: "50mb" })); // Increase JSON body size limit to 50MB
 exports.app.use(express_1.default.urlencoded({ extended: true, limit: "50mb" })); // Increase URL-encoded body size limit to 50MB

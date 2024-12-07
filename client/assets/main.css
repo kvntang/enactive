@@ -2,7 +2,7 @@
 
 :root {
   --red: rgb(208, 67, 12);
-  --base-bg: #f1f3f5;
+  --base-bg: #fb774f;
 }
 
 button.btn-small {
@@ -29,4 +29,13 @@ a.button {
   justify-content: center;
   align-items: center;
   gap: 1em;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  /* Define the gradient */
+  background: linear-gradient(to bottom, #aac0c9, #d7dfe1 ); /* Adjust colors as needed */
+  background-size: cover; /* Ensure the gradient covers the entire page */
+  background-attachment: fixed; /* Fix the background */
 }
