@@ -41,7 +41,8 @@ const canvasContainer = ref(null);
  * @param promptIndex - The prompt index calculated from angle deviation.
  * @returns The created ImageDoc's data.
  */
-const createImageDoc = async (parentId: string, coordinate: string, type: string, step: string, promptIndex: number, caption?: string, promptList?: string): Promise<ImageDoc | null> => {
+
+ const createImageDoc = async (parentId: string, coordinate: string, type: string, step: string, promptIndex: number, originalImage: string): Promise<ImageDoc | null> => {
   try {
     const authorId = "mocked-author-id"; // Mocked user
     const response = await fetchy("/api/images", "POST", {
@@ -52,15 +53,16 @@ const createImageDoc = async (parentId: string, coordinate: string, type: string
         type,
         step,
         prompt: promptIndex.toString(),
-        originalImage: "",
+        originalImage,
         steppedImage: "",
         promptedImage: "",
         caption: "",
         promptList: "",
       },
     });
-    console.log(`ImageDoc created successfully! Coordinate: ${coordinate}, Type: ${type}, Step: ${step}, Prompt Index: ${promptIndex}`);
+    console.log(`ImageDoc created successfully! ParentID: ${parentId}, Coordinate: ${coordinate}, Type: ${type}, Step: ${step}, Prompt Index: ${promptIndex}`);
     emit("refreshImages"); // Let the parent know to refresh the images
+    console.log("refreshed");
     return response as ImageDoc; // Return the created ImageDoc
   } catch (error) {
     console.error("Error creating ImageDoc:", error);
@@ -100,6 +102,26 @@ function getPromptIndex(type: string, snappedAngleDegrees: number) {
   // Return the calculated promptIndex
   return { promptIndex: Math.floor(promptIndex) };
 }
+
+
+async function getStableDiffusionResponse(type: string, steps: string, prompt_word: string, originalImage: string) {
+  try {
+    const result = await fetchy("/api/images/process", "POST", {
+      body: {
+        type,
+        steps,
+        prompt_word,
+        original_image: originalImage
+      },
+    });
+    // console.log("Stable Diffusion Response:", result.new_image);
+    return result.new_image; // The backend returns { "new_image": "<base64>" }
+  } catch (error) {
+    console.error("Error fetching stable diffusion response:", error);
+    throw error;
+  }
+}
+
 
 //--------------------------------------------------------------------------------------------------------------
 
@@ -493,87 +515,136 @@ onMounted(() => {
       p.mouseReleased = async () => {
         if (isPanning) {
           isPanning = false;
-          console.log("Stopped panning");
           return;
         }
 
-        // Finish dragging to create new ImageDoc
         if (isDraggingNew) {
           isDraggingNew = false;
 
-          // Use the locked initial drag direction to finalize the type
-          const type = initialDragDirection === "right" ? "noise" : "denoise";
-          point.type = type;
-
-          // Reset drag direction for the next drag
-          initialDragDirection = null;
-
+          // Calculate the final position based on drag
           const mouseWorld = getMouseWorld();
           const dragVector = p5.Vector.sub(mouseWorld, point.pos);
-
-          // Calculate angle from horizontal
           let angleRadians = Math.atan2(dragVector.y, dragVector.x);
           let angleDegrees = p.degrees(angleRadians);
+          let snappedAngleDegrees = Math.round(angleDegrees / 10) * 10;
 
-          // Snap angle to nearest 10 degrees
-          let angleIncrement = 10;
-          let snappedAngleDegrees = Math.round(angleDegrees / angleIncrement) * angleIncrement;
+          // Normalize snappedAngleDegrees to 0-360
+          snappedAngleDegrees = (snappedAngleDegrees + 360) % 360;
 
-          // Normalize snappedAngleDegrees to be within 0-360
-          if (snappedAngleDegrees >= 360) snappedAngleDegrees -= 360;
-          if (snappedAngleDegrees < 0) snappedAngleDegrees += 360;
+          // Determine type based on drag direction
+          const type = (dragVector.x > 0) ? "noise" : "denoise";
+          currentColor = type === "denoise" ? p.color(0, 0, 255) : p.color(255, 0, 0);
 
-          let finalPromptIndex = 0;
-
-          // Set color of latest box
-          if (point.type == "denoise") {
-            currentColor = p.color(0, 0, 255); // blue "denoise"
-          } else {
-            currentColor = p.color(255, 0, 0); // Red for "noise"
-          }
-
-          // Set the step as the magnitude of the drag vector
+          // Calculate step based on drag distance
           let step = dragVector.mag();
           let convertedStep = Math.round(step / stepFactor);
 
-          // Calculate movement direction (opposite to drag direction)
-          let movementDirection = p.createVector(-Math.cos(p.radians(snappedAngleDegrees)), -Math.sin(p.radians(snappedAngleDegrees))).setMag(step);
+          // Calculate movement direction
+          let movementDirection = p.createVector(
+            -Math.cos(p.radians(snappedAngleDegrees)),
+            -Math.sin(p.radians(snappedAngleDegrees))
+          ).setMag(step);
 
-          // Calculate final position
+          // Determine final position
           let finalPos = p5.Vector.add(point.pos, movementDirection);
 
-          // Assign final position and properties to point
-          point.finalPos = finalPos.copy();
-          const { promptIndex } = getPromptIndex(point.type, snappedAngleDegrees);
-          finalPromptIndex = promptIndex;
-          point.promptIndex = finalPromptIndex;
-          point.step = convertedStep;
-          point.isMoving = true;
-
-          // Create ImageDoc in the backend
-          const coordinate = `${Math.round(finalPos.x)},${Math.round(finalPos.y)}`;
+          const { promptIndex } = getPromptIndex(type, snappedAngleDegrees);
           const stepString = convertedStep.toString();
-
+          const coordinate = `${Math.round(finalPos.x)},${Math.round(finalPos.y)}`;
           const parentId = selectedParentId;
 
           if (!parentId) {
-            console.error("Parent ID is undefined. Skipping ImageDoc creation.");
+            console.error("Parent ID is undefined");
             return;
           }
 
-          console.log(`Parent ID is: ${parentId}`);
-
-          const createdImageDoc = await createImageDoc(parentId, coordinate, point.type, stepString, point.promptIndex, point.caption, point.promptList);
-
-          if (!createdImageDoc) {
-            console.error("Failed to create new ImageDoc.");
+          // Find parent image
+          const parentImage = staticPositions.find(sp => sp._id === parentId);
+          if (!parentImage || !parentImage.promptList) {
+            console.error("Parent image or promptList not found");
             return;
           }
 
-          // The new ImageDoc will be added to staticPositions in the draw loop
-          // and the parent will be updated automatically
+          // Extract prompt word
+          const cleanedPromptList = parentImage.promptList.replace(/^"|"$/g, "");
+          const prompts = cleanedPromptList.split(",").map(word => word.trim());
+          const promptWord = prompts[promptIndex];
+
+          if (!promptWord) {
+            console.error("No valid prompt word found for the given prompt index.");
+            return;
+          }
+
+          // Get clean image with no prefix from parent
+          const pureBase64 = parentImage.originalImage.replace(/^data:image\/\w+;base64,/, "");
+
+          try {
+            // Get Stable Diffusion response
+            const generatedImage = await getStableDiffusionResponse(
+              type,
+              stepString,
+              promptWord,
+              pureBase64
+            );
+
+            if (!generatedImage) {
+              console.error("Stable Diffusion did not return a new image.");
+              return;
+            }
+
+            // Create ImageDoc with generated image
+            const createdImageDoc = await createImageDoc(
+              parentId,
+              coordinate,
+              type,
+              stepString,
+              promptIndex,
+              `data:image/png;base64,${generatedImage}`
+            );
+
+            if (!createdImageDoc || !createdImageDoc._id) {
+              // console.error("Failed to create ImageDoc or missing ID");
+              return;
+            }
+
+            // Load the image
+            createdImageDoc.p5Image = p.loadImage(
+              createdImageDoc.originalImage,
+              () => {
+                console.log("Image loaded successfully!");
+              },
+              (err: Error) => {
+                console.error("Failed to load image:", err);
+              }
+            );
+
+            // Add to staticPositions
+            staticPositions.push({
+              pos: p.createVector(finalPos.x, finalPos.y),
+              color: type === "noise" ? p.color(255, 0, 0) : p.color(0, 0, 255),
+              type: type,
+              step: convertedStep,
+              promptIndex: promptIndex,
+              _id: createdImageDoc._id,
+              parent_id: parentId,
+              originalImage: createdImageDoc.originalImage,
+              p5Image: createdImageDoc.p5Image,
+              caption: createdImageDoc.caption,
+              promptList: createdImageDoc.promptList,
+            });
+
+            // Update selectedParentId
+            selectedParentId = createdImageDoc._id;
+            console.log(`New image created: ${createdImageDoc._id}`);
+
+            // Trigger refresh to update images
+            emit("refreshImages");
+          } catch (error) {
+            console.error("Error in image creation process:", error);
+          }
         }
       };
+
 
       p.doubleClicked = () => {
         if (mouseInCanvas()) {
