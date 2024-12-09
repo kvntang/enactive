@@ -3,9 +3,12 @@
 </template>
 
 <script setup lang="ts">
+import { HfInference } from "@huggingface/inference";
 import p5 from "p5";
 import { onMounted, onUnmounted, ref } from "vue";
 import { fetchy } from "../../utils/fetchy";
+
+const inference = new HfInference("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");
 
 interface ImageDoc {
   author: string;
@@ -42,7 +45,7 @@ const canvasContainer = ref(null);
  * @returns The created ImageDoc's data.
  */
 
- const createImageDoc = async (parentId: string, coordinate: string, type: string, step: string, promptIndex: number, originalImage: string): Promise<ImageDoc | null> => {
+ const createImageDoc = async (parentId: string, coordinate: string, type: string, step: string, promptIndex: number, originalImage: string, caption: string, promptList: string): Promise<ImageDoc | null> => {
   try {
     const authorId = "mocked-author-id"; // Mocked user
     const response = await fetchy("/api/images", "POST", {
@@ -56,11 +59,11 @@ const canvasContainer = ref(null);
         originalImage,
         steppedImage: "",
         promptedImage: "",
-        caption: "",
-        promptList: "",
+        caption,
+        promptList,
       },
     });
-    console.log(`ImageDoc created successfully! ParentID: ${parentId}, Coordinate: ${coordinate}, Type: ${type}, Step: ${step}, Prompt Index: ${promptIndex}`);
+    console.log(`ImageDoc created successfully! ParentID: ${parentId}, Coordinate: ${coordinate}, Type: ${type}, Step: ${step}, Prompt Index: ${promptIndex}, caption: ${caption}, promptList: ${promptList}`);
     emit("refreshImages"); // Let the parent know to refresh the images
     console.log("refreshed");
     return response as ImageDoc; // Return the created ImageDoc
@@ -69,6 +72,7 @@ const canvasContainer = ref(null);
     return null;
   }
 };
+
 
 /**
  * Function to set the index logic.
@@ -103,6 +107,39 @@ function getPromptIndex(type: string, snappedAngleDegrees: number) {
   return { promptIndex: Math.floor(promptIndex) };
 }
 
+
+// Direct Hugging Face caption generation
+const generateCaption = async (imageBase64: string): Promise<string> => {
+  try {
+    const base64Data = imageBase64.split(",")[1];
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = Array.from(byteCharacters, char => char.charCodeAt(0));
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: "image/jpeg" });
+
+    const result = await inference.imageToText({
+      data: blob,
+      model: "nlpconnect/vit-gpt2-image-captioning",
+    });
+
+    return result.generated_text;
+  } catch (error) {
+    console.error("Error generating caption:", error);
+    return "Failed to generate caption";
+  }
+};
+
+async function getChatGPTResponse(prompt: string) {
+  try {
+    const result = await fetchy("/api/chatgpt", "POST", {
+      body: { prompt }, // Send the prompt in the body
+    });
+    return result.response;
+  } catch (error) {
+    console.error("Error fetching ChatGPT response:", error);
+    throw error;
+  }
+}
 
 async function getStableDiffusionResponse(type: string, steps: string, prompt_word: string, originalImage: string) {
   try {
@@ -579,7 +616,7 @@ onMounted(() => {
           const pureBase64 = parentImage.originalImage.replace(/^data:image\/\w+;base64,/, "");
 
           try {
-            // Get Stable Diffusion response
+            // 1. Get Stable Diffusion response
             const generatedImage = await getStableDiffusionResponse(
               type,
               stepString,
@@ -592,20 +629,44 @@ onMounted(() => {
               return;
             }
 
-            // Create ImageDoc with generated image
+            // 2. Create caption
+            const caption = await generateCaption(`data:image/png;base64,${generatedImage}`);
+
+            // 3. Get ChatGPT response based on the caption
+            console.log("Waiting for ChatGPT response...");
+            let chatGPTResponse;
+            if (point.type === "denoise") {
+              try {
+                chatGPTResponse = await getChatGPTResponse(caption);
+                console.log("new ChatGPT prompt list for denoise:", chatGPTResponse);
+              } catch (error) {
+                console.error("Failed to get ChatGPT response:", error);
+                return;
+              }
+            } else {
+              chatGPTResponse = parentImage.promptList;
+              console.log("inherited parent prompt list:", chatGPTResponse);
+            }
+
+            // 4. Create ImageDoc with generated image
             const createdImageDoc = await createImageDoc(
               parentId,
               coordinate,
               type,
               stepString,
               promptIndex,
-              `data:image/png;base64,${generatedImage}`
+              `data:image/png;base64,${generatedImage}`,
+              caption,
+              chatGPTResponse
             );
 
             if (!createdImageDoc || !createdImageDoc._id) {
               // console.error("Failed to create ImageDoc or missing ID");
               return;
             }
+
+            createdImageDoc.caption = caption;
+            createdImageDoc.promptList = chatGPTResponse;
 
             // Load the image
             createdImageDoc.p5Image = p.loadImage(

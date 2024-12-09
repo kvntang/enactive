@@ -674,11 +674,6 @@ onMounted(() => {
               // console.log("1. Stable Diffusion Response:", sdBase64);
 
               newImage.originalImage = "data:image/png;base64," + sdBase64;
-              // newImage.p5Image = p.loadImage(newImage.originalImage), () => {
-              //   console.log("Image loaded successfully!");
-              // }, (err: Error) => {
-              //   console.error("Failed to load image:", err);
-              // };
             } catch (error) {
               console.error("Failed to get Stable Diffusion response:", error);
               return null; 
@@ -698,16 +693,22 @@ onMounted(() => {
             }
 
             // 3. create promptList with chatgpt
-            console.log("Waiting for ChatGPT response...");
-            // let promptList = null;
-            
-            try {
-              newImage.promptList = await getChatGPTResponse(newImage.caption || "");
-              console.log("new ChatGPT response:", newImage.promptList);
-            } catch (error) {
-              console.error("Failed to get ChatGPT response:", error);
-              return null; 
+            console.log("Waiting for ChatGPT response...");            
+
+            if (lastImage.type === "denoise") {
+              try {
+                newImage.promptList = await getChatGPTResponse(newImage.caption || "");
+                console.log("new ChatGPT prompt list for denoise:", newImage.promptList);
+              } catch (error) {
+                console.error("Failed to get ChatGPT response:", error);
+                return;
+              }
+            } else {
+              newImage.promptList = lastImage.promptList;
+              console.log("inherited parent prompt list:", newImage.promptList);
             }
+
+            // 4. load image
 
             newImage.p5Image = p.loadImage(newImage.originalImage), () => {
                 console.log("Image loaded successfully!");
@@ -715,7 +716,7 @@ onMounted(() => {
                 console.error("Failed to load image:", err);
               };
 
-            // create imageDoc
+            // 5. create imageDoc
             const createdImageDoc = await createImageDoc(lastImage._id || "null", coordinate, lastImage.type, steps, newImage.promptIndex, newImage.originalImage, newImage.caption || "", newImage.promptList);
             if (createdImageDoc) {
               newImage._id = createdImageDoc._id;
