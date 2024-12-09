@@ -45,7 +45,16 @@ const canvasContainer = ref(null);
  * @returns The created ImageDoc's data.
  */
 
- const createImageDoc = async (parentId: string, coordinate: string, type: string, step: string, promptIndex: number, originalImage: string, caption: string, promptList: string): Promise<ImageDoc | null> => {
+const createImageDoc = async (
+  parentId: string,
+  coordinate: string,
+  type: string,
+  step: string,
+  promptIndex: number,
+  originalImage: string,
+  caption: string,
+  promptList: string,
+): Promise<ImageDoc | null> => {
   try {
     const authorId = "mocked-author-id"; // Mocked user
     const response = await fetchy("/api/images", "POST", {
@@ -63,7 +72,9 @@ const canvasContainer = ref(null);
         promptList,
       },
     });
-    console.log(`ImageDoc created successfully! ParentID: ${parentId}, Coordinate: ${coordinate}, Type: ${type}, Step: ${step}, Prompt Index: ${promptIndex}, caption: ${caption}, promptList: ${promptList}`);
+    console.log(
+      `ImageDoc created successfully! ParentID: ${parentId}, Coordinate: ${coordinate}, Type: ${type}, Step: ${step}, Prompt Index: ${promptIndex}, caption: ${caption}, promptList: ${promptList}`,
+    );
     emit("refreshImages"); // Let the parent know to refresh the images
     console.log("refreshed");
     return response as ImageDoc; // Return the created ImageDoc
@@ -72,7 +83,6 @@ const canvasContainer = ref(null);
     return null;
   }
 };
-
 
 /**
  * Function to set the index logic.
@@ -107,13 +117,12 @@ function getPromptIndex(type: string, snappedAngleDegrees: number) {
   return { promptIndex: Math.floor(promptIndex) };
 }
 
-
 // Direct Hugging Face caption generation
 const generateCaption = async (imageBase64: string): Promise<string> => {
   try {
     const base64Data = imageBase64.split(",")[1];
     const byteCharacters = atob(base64Data);
-    const byteNumbers = Array.from(byteCharacters, char => char.charCodeAt(0));
+    const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0));
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: "image/jpeg" });
 
@@ -143,14 +152,16 @@ async function getChatGPTResponse(prompt: string) {
 
 async function getStableDiffusionResponse(type: string, steps: string, prompt_word: string, originalImage: string) {
   try {
+    console.log(">>>>>>>>> 2");
     const result = await fetchy("/api/images/process", "POST", {
       body: {
         type,
         steps,
         prompt_word,
-        original_image: originalImage
+        originalImage: originalImage,
       },
     });
+    console.log(">>>>>>>>> 3");
     // console.log("Stable Diffusion Response:", result.new_image);
     return result.new_image; // The backend returns { "new_image": "<base64>" }
   } catch (error) {
@@ -158,7 +169,6 @@ async function getStableDiffusionResponse(type: string, steps: string, prompt_wo
     throw error;
   }
 }
-
 
 //--------------------------------------------------------------------------------------------------------------
 
@@ -340,16 +350,11 @@ onMounted(() => {
         staticPositions.forEach((sp) => {
           p.push();
           p.fill(sp.color);
-          p.stroke(
-            sp._id === selectedParentId ? 255 : 0,
-            sp._id === selectedParentId ? 255 : 0,
-            0,
-            sp._id === selectedParentId ? 255 : 0
-          ); 
-        p.strokeWeight(1);
-        p.rectMode(p.CENTER);
+          p.stroke(sp._id === selectedParentId ? 255 : 0, sp._id === selectedParentId ? 255 : 0, 0, sp._id === selectedParentId ? 255 : 0);
+          p.strokeWeight(1);
+          p.rectMode(p.CENTER);
 
-        if (sp.p5Image) {
+          if (sp.p5Image) {
             p.imageMode(p.CENTER);
             p.image(sp.p5Image, sp.pos.x, sp.pos.y, 70, 70); // Display image
             p.noFill();
@@ -366,20 +371,19 @@ onMounted(() => {
           if (sp.promptList) {
             try {
               const cleanedPromptList = sp.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
-              const prompts = cleanedPromptList.split(",").map(word => word.trim());
+              const prompts = cleanedPromptList.split(",").map((word) => word.trim());
 
               const promptWord = prompts[sp.promptIndex]; //pick the right word
             } catch (e) {
               console.log(`Error parsing promptList for ImageDoc ID: ${sp._id}`);
-            } 
-            // display caption at the bottom 
-            p.textSize(15);     
+            }
+            // display caption at the bottom
+            p.textSize(15);
             p.textAlign(p.CENTER, p.TOP);
-            p.textWrap(p.WORD);  // Wrap by word (use p.CHAR for character wrapping)
-            const maxTextWidth = 140;  // Set maximum width for wrapping
-            p.text(sp.caption, sp.pos.x - maxTextWidth/2, sp.pos.y + 50, maxTextWidth);
+            p.textWrap(p.WORD); // Wrap by word (use p.CHAR for character wrapping)
+            const maxTextWidth = 140; // Set maximum width for wrapping
+            p.text(sp.caption, sp.pos.x - maxTextWidth / 2, sp.pos.y + 50, maxTextWidth);
           }
-
         });
 
         // Draw the moving point when dragging or moving-------------------------------------------------
@@ -428,16 +432,15 @@ onMounted(() => {
           let lineEnd = p5.Vector.add(point.pos, direction);
           p.line(point.pos.x, point.pos.y, lineEnd.x, lineEnd.y);
 
-
           // Draw the angle index
           const { promptIndex } = getPromptIndex(point.type, snappedAngleDegrees);
 
-          const selectedParent = staticPositions.find(sp => sp._id === selectedParentId);
+          const selectedParent = staticPositions.find((sp) => sp._id === selectedParentId);
           if (selectedParent && selectedParent.promptList) {
             const cleanedPromptList = selectedParent.promptList.replace(/^"|"$/g, "");
-            const prompts = cleanedPromptList.split(",").map(word => word.trim());
+            const prompts = cleanedPromptList.split(",").map((word) => word.trim());
             const promptWord = prompts[promptIndex];
-            
+
             p.textSize(25);
             p.fill(255);
             p.text(promptWord, lineEnd.x, lineEnd.y);
@@ -494,7 +497,8 @@ onMounted(() => {
       // Mouse interaction functions
       p.mousePressed = (event: MouseEvent) => {
         if (mouseInCanvas()) {
-          if (p.keyIsDown(p.SHIFT)) { // Ensure SHIFT is pressed
+          if (p.keyIsDown(p.SHIFT)) {
+            // Ensure SHIFT is pressed
             isPanning = true;
             panStartX = p.mouseX;
             panStartY = p.mouseY;
@@ -569,7 +573,7 @@ onMounted(() => {
           snappedAngleDegrees = (snappedAngleDegrees + 360) % 360;
 
           // Determine type based on drag direction
-          const type = (dragVector.x > 0) ? "noise" : "denoise";
+          const type = dragVector.x > 0 ? "noise" : "denoise";
           currentColor = type === "denoise" ? p.color(0, 0, 255) : p.color(255, 0, 0);
 
           // Calculate step based on drag distance
@@ -577,10 +581,7 @@ onMounted(() => {
           let convertedStep = Math.round(step / stepFactor);
 
           // Calculate movement direction
-          let movementDirection = p.createVector(
-            -Math.cos(p.radians(snappedAngleDegrees)),
-            -Math.sin(p.radians(snappedAngleDegrees))
-          ).setMag(step);
+          let movementDirection = p.createVector(-Math.cos(p.radians(snappedAngleDegrees)), -Math.sin(p.radians(snappedAngleDegrees))).setMag(step);
 
           // Determine final position
           let finalPos = p5.Vector.add(point.pos, movementDirection);
@@ -596,7 +597,7 @@ onMounted(() => {
           }
 
           // Find parent image
-          const parentImage = staticPositions.find(sp => sp._id === parentId);
+          const parentImage = staticPositions.find((sp) => sp._id === parentId);
           if (!parentImage || !parentImage.promptList) {
             console.error("Parent image or promptList not found");
             return;
@@ -604,7 +605,7 @@ onMounted(() => {
 
           // Extract prompt word
           const cleanedPromptList = parentImage.promptList.replace(/^"|"$/g, "");
-          const prompts = cleanedPromptList.split(",").map(word => word.trim());
+          const prompts = cleanedPromptList.split(",").map((word) => word.trim());
           const promptWord = prompts[promptIndex];
 
           if (!promptWord) {
@@ -617,12 +618,9 @@ onMounted(() => {
 
           try {
             // 1. Get Stable Diffusion response
-            const generatedImage = await getStableDiffusionResponse(
-              type,
-              stepString,
-              promptWord,
-              pureBase64
-            );
+            console.log(">>>>>>>>> 1");
+            const generatedImage = await getStableDiffusionResponse(type, stepString, promptWord, pureBase64);
+            console.log(">>>>>>>>> 4");
 
             if (!generatedImage) {
               console.error("Stable Diffusion did not return a new image.");
@@ -649,16 +647,7 @@ onMounted(() => {
             }
 
             // 4. Create ImageDoc with generated image
-            const createdImageDoc = await createImageDoc(
-              parentId,
-              coordinate,
-              type,
-              stepString,
-              promptIndex,
-              `data:image/png;base64,${generatedImage}`,
-              caption,
-              chatGPTResponse
-            );
+            const createdImageDoc = await createImageDoc(parentId, coordinate, type, stepString, promptIndex, `data:image/png;base64,${generatedImage}`, caption, chatGPTResponse);
 
             if (!createdImageDoc || !createdImageDoc._id) {
               // console.error("Failed to create ImageDoc or missing ID");
@@ -676,7 +665,7 @@ onMounted(() => {
               },
               (err: Error) => {
                 console.error("Failed to load image:", err);
-              }
+              },
             );
 
             // Add to staticPositions
@@ -706,7 +695,6 @@ onMounted(() => {
         }
       };
 
-
       p.doubleClicked = () => {
         if (mouseInCanvas()) {
           let clickedBox = null;
@@ -721,10 +709,10 @@ onMounted(() => {
 
           if (clickedBox) {
             selectedParentId = clickedBox._id ?? null;
-          //   const selectedParent = props.images.find(img => img._id === selectedParentId);
-          // if (selectedParent) {
-          //   point.promptList = selectedParent.promptList;
-          // }
+            //   const selectedParent = props.images.find(img => img._id === selectedParentId);
+            // if (selectedParent) {
+            //   point.promptList = selectedParent.promptList;
+            // }
             console.log(`Selected parent ID: ${selectedParentId}`);
           }
         }
