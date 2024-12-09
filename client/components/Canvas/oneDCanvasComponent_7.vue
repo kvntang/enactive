@@ -36,7 +36,7 @@ const canvasContainer = ref(null);
 /**
  * Function to create ImageDoc in the backend
  */
-const createImageDoc = async (parentId: string, coordinate: string, type: string, step: string, promptIndex: number): Promise<ImageDoc | null> => {
+const createImageDoc = async (parentId: string, coordinate: string, type: string, step: string, promptIndex: number, originalImage: string): Promise<ImageDoc | null> => {
   try {
     const authorId = "mocked-author-id"; // Mocked user
     const response = await fetchy("/api/images", "POST", {
@@ -47,7 +47,7 @@ const createImageDoc = async (parentId: string, coordinate: string, type: string
         type,
         step,
         prompt: promptIndex.toString(),
-        originalImage: "",
+        originalImage,
         steppedImage: "",
         promptedImage: "",
         caption: "",
@@ -63,6 +63,25 @@ const createImageDoc = async (parentId: string, coordinate: string, type: string
     return null;
   }
 };
+
+async function getStableDiffusionResponse(type: string, steps: string, prompt_word: string, originalImage: string) {
+  try {
+    const result = await fetchy("/api/images/process", "POST", {
+      body: {
+        type,
+        steps,
+        prompt_word,
+        original_image: originalImage
+      },
+    });
+    console.log("Stable Diffusion Response:", result.new_image);
+    return result.new_image; // The backend returns { "new_image": "<base64>" }
+  } catch (error) {
+    console.error("Error fetching stable diffusion response:", error);
+    throw error;
+  }
+}
+
 
 //--------------------------------------------------------------------------------------------------------------
 
@@ -309,7 +328,7 @@ onMounted(() => {
               } else if (child.type === "denoise") {
                 p.fill(0, 0, 255); // Blue for denoise
               } else {
-                p.fill(128, 0, 128); // Purple for other types
+                // p.fill(128, 0, 128); // Purple for other types
               }
 
               // Draw the corner box
@@ -595,17 +614,58 @@ onMounted(() => {
 
             // Persist the new position to the backend
             const coordinate = `${Math.round(newImage.pos.x)},${Math.round(newImage.pos.y)}`;
-            const stepString = newImage.step.toString();
+            const steps = newImage.step.toString();
+            const pureBase64 = lastImage.originalImage.replace(/^data:image\/\w+;base64,/, "");
+            const cleanedPromptList = lastImage.promptList.replace(/^"|"$/g, "");
+            const prompts = cleanedPromptList.split(",").map((word) => word.trim());
+            const chosenPromptWord = prompts[newImage.promptIndex]; 
 
-            const createdImageDoc = await createImageDoc(lastImage._id || "null", coordinate, lastImage.type, stepString, newImage.promptIndex);
+            if (!chosenPromptWord) {
+              console.error("No valid prompt word found for the given prompt index.");
+              return; // Stop if we don't have a valid prompt
+            }
 
+            console.log("Waiting for Stable Diffusion response...");
+            console.log("Prompt Word:", chosenPromptWord);
+            console.log("Prompt Index:", newImage.promptIndex);
+            console.log("Type:", newImage.type);
+            console.log("Step:", steps);
+            console.log("Original Image:", pureBase64);
+
+            try {
+              let sdBase64 = await getStableDiffusionResponse(newImage.type, steps, chosenPromptWord, pureBase64);
+              console.log("1. Stable Diffusion Response:", sdBase64);
+
+              newImage.originalImage = "data:image/png;base64," + sdBase64;
+              newImage.p5Image = p.loadImage(newImage.originalImage), () => {
+                console.log("Image loaded successfully!");
+              }, (err: Error) => {
+                console.error("Failed to load image:", err);
+              };
+            } catch (error) {
+              console.error("Failed to get Stable Diffusion response:", error);
+              return null; 
+            }
+            console.log("2. right before ImageDoc created successfully:", newImage.originalImage);
+            // const createdImageDoc = await createImageDoc(lastImage._id || "null", coordinate, lastImage.type, stepString, newImage.promptIndex);
+            const createdImageDoc = await createImageDoc(lastImage._id || "null", coordinate, lastImage.type, steps, newImage.promptIndex, newImage.originalImage);
+            if (createdImageDoc) {
+              newImage._id = createdImageDoc._id;
+              // newImage.color = p.color(128, 0, 128); // Purple
+              newImage.type = createdImageDoc.type;
+              newImage.originalImage = createdImageDoc.originalImage;
+              console.log("3. New ImageDoc created successfully:", createdImageDoc);
+            } else {
+              console.warn("Failed to create new ImageDoc. Removing new image from staticPositions.");
+              staticPositions.pop();
+            }
             // if (createdImageDoc) {
             //   newImage._id = createdImageDoc._id;
             //   newImage.p5Image = p.loadImage(createdImageDoc.originalImage);
             // }
             if (createdImageDoc) {
               newImage._id = createdImageDoc._id;
-              newImage.color = p.color(128, 0, 128); // Purple for new ImageDoc consistency
+              // newImage.color = p.color(128, 0, 128); // Purple for new ImageDoc consistency
               newImage.type = createdImageDoc.type; // Use type from the backend
           } else {
               console.warn("Failed to create new ImageDoc. Skipping addition to staticPositions.");
