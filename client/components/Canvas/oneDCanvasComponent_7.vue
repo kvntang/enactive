@@ -111,23 +111,28 @@ async function getChatGPTResponse(prompt: string) {
   }
 }
 
-async function getStableDiffusionResponse(type: string, steps: string, prompt_word: string, originalImage: string) {
+async function getStableDiffusionResponse(
+  type: string,
+  steps: number, 
+  prompt_word: string,
+  originalImage: string
+) {
   try {
     const result = await fetchy("/api/images/process", "POST", {
       body: {
         type,
-        steps,
+        steps, 
         prompt_word,
-        originalImage: originalImage,
+        original_image: originalImage, 
       },
     });
-    // console.log("Stable Diffusion Response:", result.new_image);
-    return result.new_image; // The backend returns { "new_image": "<base64>" }
+    return result.new_image;
   } catch (error) {
     console.error("Error fetching stable diffusion response:", error);
     throw error;
   }
 }
+
 
 //--------------------------------------------------------------------------------------------------------------
 
@@ -654,7 +659,7 @@ onMounted(() => {
 
             // Persist the new position to the backend
             const coordinate = `${Math.round(newImage.pos.x)},${Math.round(newImage.pos.y)}`;
-            const steps = newImage.step.toString();
+            // const steps = newImage.step.toString();
             const pureBase64 = lastImage.originalImage.replace(/^data:image\/\w+;base64,/, "");
             const cleanedPromptList = lastImage.promptList.replace(/^"|"$/g, "");
             const prompts = cleanedPromptList.split(",").map((word) => word.trim());
@@ -665,15 +670,14 @@ onMounted(() => {
               return; // Stop if we don't have a valid prompt
             }
 
-            // console.log("Waiting for Stable Diffusion response...");
-            // console.log("Prompt Word:", chosenPromptWord);
-            // console.log("Prompt Index:", newImage.promptIndex);
-            // console.log("Type:", newImage.type);
-            // console.log("Step:", steps);
-            // console.log("Original Image:", pureBase64);
-
             // 1. create stable diffusion
+            let steps = 0;
             try {
+              if (newImage.type === "noise") {
+                steps = Number(newImage.step)*40;
+              } else {
+                steps = Number(newImage.step)*10;
+              }
               let sdBase64 = await getStableDiffusionResponse(newImage.type, steps, chosenPromptWord, pureBase64);
               // console.log("1. Stable Diffusion Response:", sdBase64);
 
@@ -727,7 +731,7 @@ onMounted(() => {
               lastImage._id || "null",
               coordinate,
               lastImage.type,
-              steps,
+              newImage.step.toString(),
               newImage.promptIndex,
               newImage.originalImage,
               newImage.caption || "",

@@ -150,20 +150,22 @@ async function getChatGPTResponse(prompt: string) {
   }
 }
 
-async function getStableDiffusionResponse(type: string, steps: string, prompt_word: string, originalImage: string) {
+async function getStableDiffusionResponse(
+  type: string,
+  steps: number, 
+  prompt_word: string,
+  originalImage: string
+) {
   try {
-    console.log(">>>>>>>>> 2");
     const result = await fetchy("/api/images/process", "POST", {
       body: {
         type,
-        steps,
+        steps, 
         prompt_word,
-        originalImage: originalImage,
+        original_image: originalImage, 
       },
     });
-    console.log(">>>>>>>>> 3");
-    // console.log("Stable Diffusion Response:", result.new_image);
-    return result.new_image; // The backend returns { "new_image": "<base64>" }
+    return result.new_image;
   } catch (error) {
     console.error("Error fetching stable diffusion response:", error);
     throw error;
@@ -214,7 +216,7 @@ onMounted(() => {
       let selectedParentId: string | null = null;
 
       //0. Conversion
-      const stepFactor = 30;
+      const stepFactor = 40;
 
       //-------------------SETUP----------------------------------------------------------------------------
       p.setup = async () => {
@@ -578,7 +580,9 @@ onMounted(() => {
 
           // Calculate step based on drag distance
           let step = dragVector.mag();
+          console.log("step:", step);
           let convertedStep = Math.round(step / stepFactor);
+          console.log("convertedStep:", convertedStep);
 
           // Calculate movement direction
           let movementDirection = p.createVector(-Math.cos(p.radians(snappedAngleDegrees)), -Math.sin(p.radians(snappedAngleDegrees))).setMag(step);
@@ -587,7 +591,7 @@ onMounted(() => {
           let finalPos = p5.Vector.add(point.pos, movementDirection);
 
           const { promptIndex } = getPromptIndex(type, snappedAngleDegrees);
-          const stepString = convertedStep.toString();
+          // const stepString = (convertedStep*10).toString();
           const coordinate = `${Math.round(finalPos.x)},${Math.round(finalPos.y)}`;
           const parentId = selectedParentId;
 
@@ -606,21 +610,41 @@ onMounted(() => {
           // Extract prompt word
           const cleanedPromptList = parentImage.promptList.replace(/^"|"$/g, "");
           const prompts = cleanedPromptList.split(",").map((word) => word.trim());
-          const promptWord = prompts[promptIndex];
+          const promptWord = prompts[promptIndex] || "";
 
           if (!promptWord) {
             console.error("No valid prompt word found for the given prompt index.");
             return;
           }
 
-          // Get clean image with no prefix from parent
+          // Add this check before processing original_image
+          if (!parentImage.originalImage) {
+            console.error("parentImage.originalImage is undefined or invalid");
+            return;
+          }
+
           const pureBase64 = parentImage.originalImage.replace(/^data:image\/\w+;base64,/, "");
+
+          let steps = convertedStep;
+          let stepValue;
+          console.log(steps)
+          if (type === "noise") {
+            steps = Math.floor(Number(convertedStep) * 40);
+            stepValue = Number(steps) / 40;
+          } else {
+            steps = Math.floor(Number(convertedStep) * 10);
+            stepValue = Number(steps) / 10;
+          }
+          if (steps <= 0) {
+            console.error("Steps must be a positive integer");
+            return;
+          }
 
           try {
             // 1. Get Stable Diffusion response
-            console.log(">>>>>>>>> 1");
-            const generatedImage = await getStableDiffusionResponse(type, stepString, promptWord, pureBase64);
-            console.log(">>>>>>>>> 4");
+            console.log(">>>>>>>>> 1 running stable diffusion");
+            const generatedImage = await getStableDiffusionResponse(type, steps, promptWord, pureBase64);
+            console.log(">>>>>>>>> 4", steps);
 
             if (!generatedImage) {
               console.error("Stable Diffusion did not return a new image.");
@@ -645,9 +669,9 @@ onMounted(() => {
               chatGPTResponse = parentImage.promptList;
               console.log("inherited parent prompt list:", chatGPTResponse);
             }
-
+            
             // 4. Create ImageDoc with generated image
-            const createdImageDoc = await createImageDoc(parentId, coordinate, type, stepString, promptIndex, `data:image/png;base64,${generatedImage}`, caption, chatGPTResponse);
+            const createdImageDoc = await createImageDoc(parentId, coordinate, type, stepValue.toString(), promptIndex, `data:image/png;base64,${generatedImage}`, caption, chatGPTResponse);
 
             if (!createdImageDoc || !createdImageDoc._id) {
               // console.error("Failed to create ImageDoc or missing ID");
