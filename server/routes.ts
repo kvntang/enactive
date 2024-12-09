@@ -106,25 +106,36 @@ class Routes {
   }
 
   @Router.post("/images/process")
-  async processImage(type: string, step: string, prompt_word: string, originalImage: string) {
-    console.log(">>>>>>>>> 2.5");
+  @Router.validate(z.object({
+    type: z.string().refine(val => ['noise', 'denoise'].includes(val), { message: "Invalid type" }),
+    steps: z.number().int().positive(),
+    prompt_word: z.string().optional(),
+    original_image: z.string(),
+  }))
+  async processImage(type: string, steps: number, prompt_word: string, original_image: string) {
+    console.log("Process Image - Type:", type, "Steps:", steps);
+    
     const response = await fetch("https://app.unaliu.com/api/process", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: type,
-        steps: step,
+        steps: steps,
         prompt_word: prompt_word,
-        original_image: originalImage,
+        original_image: original_image,
       }),
     });
-
+  
     if (!response.ok) {
+      console.error(`Image processing failed with status: ${response.statusText}`);
       throw new Error(`Image processing failed: ${response.statusText}`);
     }
-
-    return await response.json();
+  
+    const jsonResponse = await response.json();
+    console.log("Stable Diffusion Response:", jsonResponse);
+    return jsonResponse;
   }
+  
 
   @Router.post("/chatgpt")
   async handleChatGPTRequest(prompt: string) {
