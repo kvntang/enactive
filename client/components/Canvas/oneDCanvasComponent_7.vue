@@ -40,7 +40,16 @@ const canvasContainer = ref(null);
 /**
  * Function to create ImageDoc in the backend
  */
-const createImageDoc = async (parentId: string, coordinate: string, type: string, step: string, promptIndex: number, originalImage: string, caption: string, promptList: string): Promise<ImageDoc | null> => {
+const createImageDoc = async (
+  parentId: string,
+  coordinate: string,
+  type: string,
+  step: string,
+  promptIndex: number,
+  originalImage: string,
+  caption: string,
+  promptList: string,
+): Promise<ImageDoc | null> => {
   try {
     const authorId = "mocked-author-id"; // Mocked user
     const response = await fetchy("/api/images", "POST", {
@@ -58,7 +67,9 @@ const createImageDoc = async (parentId: string, coordinate: string, type: string
         promptList,
       },
     });
-    console.log(`ImageDoc created successfully! ParentID: ${parentId}, Coordinate: ${coordinate}, Type: ${type}, Step: ${step}, Prompt Index: ${promptIndex}, caption: ${caption}, promptList: ${promptList}`);
+    console.log(
+      `ImageDoc created successfully! ParentID: ${parentId}, Coordinate: ${coordinate}, Type: ${type}, Step: ${step}, Prompt Index: ${promptIndex}, caption: ${caption}, promptList: ${promptList}`,
+    );
     emit("refreshImages"); // Let the parent know to refresh the images
     console.log("refreshed");
     return response as ImageDoc; // Return the created ImageDoc
@@ -72,7 +83,7 @@ const generateCaption = async (imageBase64: string): Promise<string> => {
   try {
     const base64Data = imageBase64.split(",")[1];
     const byteCharacters = atob(base64Data);
-    const byteNumbers = Array.from(byteCharacters, char => char.charCodeAt(0));
+    const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0));
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: "image/jpeg" });
 
@@ -107,7 +118,7 @@ async function getStableDiffusionResponse(type: string, steps: string, prompt_wo
         type,
         steps,
         prompt_word,
-        original_image: originalImage
+        originalImage: originalImage,
       },
     });
     // console.log("Stable Diffusion Response:", result.new_image);
@@ -117,7 +128,6 @@ async function getStableDiffusionResponse(type: string, steps: string, prompt_wo
     throw error;
   }
 }
-
 
 //--------------------------------------------------------------------------------------------------------------
 
@@ -412,8 +422,6 @@ onMounted(() => {
           }
           // PURPLE BOX ------------------------------------------------------------------
 
-          
-
           // Highlight the last image with a yellow outline
           if (sp === staticPositions[staticPositions.length - 1]) {
             p.stroke(255, 255, 0); // Yellow color
@@ -422,7 +430,6 @@ onMounted(() => {
             p.noStroke(); // No stroke for other squares
           }
 
-          
           // Draw the preloaded image
           if (sp.p5Image) {
             p.noStroke();
@@ -447,11 +454,10 @@ onMounted(() => {
             try {
               // Split the promptList into an array by commas and trim whitespace
               const cleanedPromptList = sp.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
-              const prompts = cleanedPromptList.split(",").map(word => word.trim());
+              const prompts = cleanedPromptList.split(",").map((word) => word.trim());
 
               const promptWord = prompts[sp.promptIndex]; //pick the right word
 
-              
               p.fill(255);
               p.textAlign(p.CENTER, p.CENTER);
               p.text(promptWord, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2);
@@ -461,10 +467,9 @@ onMounted(() => {
           }
           // Display the caption at the bottom of the image -------------------------------------------------
           p.textAlign(p.CENTER, p.TOP);
-          p.textWrap(p.WORD);  // Wrap by word (use p.CHAR for character wrapping)
-          const maxTextWidth = 140;  // Set maximum width for wrapping
-          p.text(sp.caption, sp.pos.x + gridSize / 2 - maxTextWidth/2, sp.currentY + gridSize / 2 + 50, maxTextWidth);
-          
+          p.textWrap(p.WORD); // Wrap by word (use p.CHAR for character wrapping)
+          const maxTextWidth = 140; // Set maximum width for wrapping
+          p.text(sp.caption, sp.pos.x + gridSize / 2 - maxTextWidth / 2, sp.currentY + gridSize / 2 + 50, maxTextWidth);
         }
 
         if (isDragging) {
@@ -505,10 +510,9 @@ onMounted(() => {
             // Display prompt index (set based on current promptSteps)
             p.fill(255);
             const cleanedPromptList = lastImage.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
-            const prompts = cleanedPromptList.split(",").map(word => word.trim());
+            const prompts = cleanedPromptList.split(",").map((word) => word.trim());
             const promptWord = prompts[promptSteps]; //pick the right word
             p.text(promptWord, lastImage.pos.x + gridSize * 2, newY + gridSize / 2);
-
           } else if (Math.abs(dragDistanceX) > gridSize / 2) {
             // Horizontal dragging (noise/denoise)
             let steps = Math.floor(Math.abs(dragDistanceX) / stepDistance);
@@ -654,7 +658,7 @@ onMounted(() => {
             const pureBase64 = lastImage.originalImage.replace(/^data:image\/\w+;base64,/, "");
             const cleanedPromptList = lastImage.promptList.replace(/^"|"$/g, "");
             const prompts = cleanedPromptList.split(",").map((word) => word.trim());
-            const chosenPromptWord = prompts[newImage.promptIndex]; 
+            const chosenPromptWord = prompts[newImage.promptIndex];
 
             if (!chosenPromptWord) {
               console.error("No valid prompt word found for the given prompt index.");
@@ -676,9 +680,9 @@ onMounted(() => {
               newImage.originalImage = "data:image/png;base64," + sdBase64;
             } catch (error) {
               console.error("Failed to get Stable Diffusion response:", error);
-              return null; 
+              return null;
             }
-            
+
             // 2. create caption
             if (newImage.originalImage) {
               try {
@@ -693,7 +697,7 @@ onMounted(() => {
             }
 
             // 3. create promptList with chatgpt
-            console.log("Waiting for ChatGPT response...");            
+            console.log("Waiting for ChatGPT response...");
 
             if (lastImage.type === "denoise") {
               try {
@@ -710,14 +714,25 @@ onMounted(() => {
 
             // 4. load image
 
-            newImage.p5Image = p.loadImage(newImage.originalImage), () => {
+            (newImage.p5Image = p.loadImage(newImage.originalImage)),
+              () => {
                 console.log("Image loaded successfully!");
-              }, (err: Error) => {
+              },
+              (err: Error) => {
                 console.error("Failed to load image:", err);
               };
 
             // 5. create imageDoc
-            const createdImageDoc = await createImageDoc(lastImage._id || "null", coordinate, lastImage.type, steps, newImage.promptIndex, newImage.originalImage, newImage.caption || "", newImage.promptList);
+            const createdImageDoc = await createImageDoc(
+              lastImage._id || "null",
+              coordinate,
+              lastImage.type,
+              steps,
+              newImage.promptIndex,
+              newImage.originalImage,
+              newImage.caption || "",
+              newImage.promptList,
+            );
             if (createdImageDoc) {
               newImage._id = createdImageDoc._id;
               newImage.type = createdImageDoc.type;
@@ -733,10 +748,10 @@ onMounted(() => {
             if (createdImageDoc) {
               newImage._id = createdImageDoc._id;
               newImage.type = createdImageDoc.type; // Use type from the backend
-          } else {
+            } else {
               console.warn("Failed to create new ImageDoc. Skipping addition to staticPositions.");
               staticPositions.pop(); // Remove the new image if creation fails
-          }
+            }
           } else if (Math.abs(dragDistanceX) > gridSize / 2) {
             //----------------------------------------------------------------------------------------------------
             //----------------------------------------------------------------------------------------------------
@@ -760,7 +775,7 @@ onMounted(() => {
                 isAnimating: false,
                 currentY: lastImage.pos.y,
                 originalImage: lastImage.originalImage, // Add originalImage property
-                promptList: lastImage.promptList
+                promptList: lastImage.promptList,
               };
 
               staticPositions.push(newImage);
