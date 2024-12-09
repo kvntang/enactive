@@ -3,9 +3,13 @@
 </template>
 
 <script setup lang="ts">
+import { HfInference } from "@huggingface/inference";
 import p5 from "p5";
 import { onMounted, onUnmounted, ref } from "vue";
 import { fetchy } from "../../utils/fetchy";
+
+// Hugging Face Inference instance
+const inference = new HfInference("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");
 
 // Define the ImageDoc interface to match the 2D canvas structure
 interface ImageDoc {
@@ -36,7 +40,7 @@ const canvasContainer = ref(null);
 /**
  * Function to create ImageDoc in the backend
  */
-const createImageDoc = async (parentId: string, coordinate: string, type: string, step: string, promptIndex: number, originalImage: string): Promise<ImageDoc | null> => {
+const createImageDoc = async (parentId: string, coordinate: string, type: string, step: string, promptIndex: number, originalImage: string, caption: string, promptList: string): Promise<ImageDoc | null> => {
   try {
     const authorId = "mocked-author-id"; // Mocked user
     const response = await fetchy("/api/images", "POST", {
@@ -50,11 +54,11 @@ const createImageDoc = async (parentId: string, coordinate: string, type: string
         originalImage,
         steppedImage: "",
         promptedImage: "",
-        caption: "",
-        promptList: "",
+        caption,
+        promptList,
       },
     });
-    console.log(`ImageDoc created successfully! ParentID: ${parentId}, Coordinate: ${coordinate}, Type: ${type}, Step: ${step}, Prompt Index: ${promptIndex}`);
+    console.log(`ImageDoc created successfully! ParentID: ${parentId}, Coordinate: ${coordinate}, Type: ${type}, Step: ${step}, Prompt Index: ${promptIndex}, caption: ${caption}, promptList: ${promptList}`);
     emit("refreshImages"); // Let the parent know to refresh the images
     console.log("refreshed");
     return response as ImageDoc; // Return the created ImageDoc
@@ -63,6 +67,38 @@ const createImageDoc = async (parentId: string, coordinate: string, type: string
     return null;
   }
 };
+
+const generateCaption = async (imageBase64: string): Promise<string> => {
+  try {
+    const base64Data = imageBase64.split(",")[1];
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = Array.from(byteCharacters, char => char.charCodeAt(0));
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: "image/jpeg" });
+
+    const result = await inference.imageToText({
+      data: blob,
+      model: "nlpconnect/vit-gpt2-image-captioning",
+    });
+
+    return result.generated_text;
+  } catch (error) {
+    console.error("Error generating caption:", error);
+    return "Failed to generate caption";
+  }
+};
+
+async function getChatGPTResponse(prompt: string) {
+  try {
+    const result = await fetchy("/api/chatgpt", "POST", {
+      body: { prompt }, // Send the prompt in the body
+    });
+    return result.response;
+  } catch (error) {
+    console.error("Error fetching ChatGPT response:", error);
+    throw error;
+  }
+}
 
 async function getStableDiffusionResponse(type: string, steps: string, prompt_word: string, originalImage: string) {
   try {
@@ -74,7 +110,7 @@ async function getStableDiffusionResponse(type: string, steps: string, prompt_wo
         original_image: originalImage
       },
     });
-    console.log("Stable Diffusion Response:", result.new_image);
+    // console.log("Stable Diffusion Response:", result.new_image);
     return result.new_image; // The backend returns { "new_image": "<base64>" }
   } catch (error) {
     console.error("Error fetching stable diffusion response:", error);
@@ -292,7 +328,7 @@ onMounted(() => {
               let text = `${child.type} ${child.step}`; //concat
               p.text(text, midPointX, midPointY - 15); // Adjust Y position to place text above the line
               // create caption at the bottom of the image
-              p.text(child.caption, child.pos.x + gridSize / 2 +50, child.currentY + gridSize / 2 + 20);
+              // p.text(child.caption, child.pos.x + gridSize / 2 +50, child.currentY + gridSize / 2 + 20);
 
               // Draw a triangle to indicate the direction
               let triangleSize = 5 / scaleFactor; // Adjust size based on zoom level
@@ -607,7 +643,7 @@ onMounted(() => {
               targetY: newY,
               animationStartTime: p.millis(),
               animationDuration: 500,
-              promptList: "kevin",
+              promptList: lastImage.promptList,
             };
 
             staticPositions.push(newImage);
@@ -625,47 +661,76 @@ onMounted(() => {
               return; // Stop if we don't have a valid prompt
             }
 
-            console.log("Waiting for Stable Diffusion response...");
-            console.log("Prompt Word:", chosenPromptWord);
-            console.log("Prompt Index:", newImage.promptIndex);
-            console.log("Type:", newImage.type);
-            console.log("Step:", steps);
-            console.log("Original Image:", pureBase64);
+            // console.log("Waiting for Stable Diffusion response...");
+            // console.log("Prompt Word:", chosenPromptWord);
+            // console.log("Prompt Index:", newImage.promptIndex);
+            // console.log("Type:", newImage.type);
+            // console.log("Step:", steps);
+            // console.log("Original Image:", pureBase64);
 
+            // 1. create stable diffusion
             try {
               let sdBase64 = await getStableDiffusionResponse(newImage.type, steps, chosenPromptWord, pureBase64);
-              console.log("1. Stable Diffusion Response:", sdBase64);
+              // console.log("1. Stable Diffusion Response:", sdBase64);
 
               newImage.originalImage = "data:image/png;base64," + sdBase64;
-              newImage.p5Image = p.loadImage(newImage.originalImage), () => {
-                console.log("Image loaded successfully!");
-              }, (err: Error) => {
-                console.error("Failed to load image:", err);
-              };
+              // newImage.p5Image = p.loadImage(newImage.originalImage), () => {
+              //   console.log("Image loaded successfully!");
+              // }, (err: Error) => {
+              //   console.error("Failed to load image:", err);
+              // };
             } catch (error) {
               console.error("Failed to get Stable Diffusion response:", error);
               return null; 
             }
-            console.log("2. right before ImageDoc created successfully:", newImage.originalImage);
-            // const createdImageDoc = await createImageDoc(lastImage._id || "null", coordinate, lastImage.type, stepString, newImage.promptIndex);
-            const createdImageDoc = await createImageDoc(lastImage._id || "null", coordinate, lastImage.type, steps, newImage.promptIndex, newImage.originalImage);
+            
+            // 2. create caption
+            if (newImage.originalImage) {
+              try {
+                const imageBase64 = newImage.originalImage;
+                const caption = await generateCaption(imageBase64);
+                newImage.caption = caption;
+                console.log("new image caption:", caption);
+              } catch (error) {
+                console.error("Error converting image or generating caption:", error);
+                return null; // Exit early if there's an error with the caption
+              }
+            }
+
+            // 3. create promptList with chatgpt
+            console.log("Waiting for ChatGPT response...");
+            // let promptList = null;
+            
+            try {
+              newImage.promptList = await getChatGPTResponse(newImage.caption || "");
+              console.log("new ChatGPT response:", newImage.promptList);
+            } catch (error) {
+              console.error("Failed to get ChatGPT response:", error);
+              return null; 
+            }
+
+            newImage.p5Image = p.loadImage(newImage.originalImage), () => {
+                console.log("Image loaded successfully!");
+              }, (err: Error) => {
+                console.error("Failed to load image:", err);
+              };
+
+            // create imageDoc
+            const createdImageDoc = await createImageDoc(lastImage._id || "null", coordinate, lastImage.type, steps, newImage.promptIndex, newImage.originalImage, newImage.caption || "", newImage.promptList);
             if (createdImageDoc) {
               newImage._id = createdImageDoc._id;
-              // newImage.color = p.color(128, 0, 128); // Purple
               newImage.type = createdImageDoc.type;
               newImage.originalImage = createdImageDoc.originalImage;
-              console.log("3. New ImageDoc created successfully:", createdImageDoc);
+              newImage.caption = createdImageDoc.caption;
+              newImage.promptList = createdImageDoc.promptList;
+              // console.log("3. New ImageDoc created successfully:", createdImageDoc);
             } else {
               console.warn("Failed to create new ImageDoc. Removing new image from staticPositions.");
               staticPositions.pop();
             }
-            // if (createdImageDoc) {
-            //   newImage._id = createdImageDoc._id;
-            //   newImage.p5Image = p.loadImage(createdImageDoc.originalImage);
-            // }
+
             if (createdImageDoc) {
               newImage._id = createdImageDoc._id;
-              // newImage.color = p.color(128, 0, 128); // Purple for new ImageDoc consistency
               newImage.type = createdImageDoc.type; // Use type from the backend
           } else {
               console.warn("Failed to create new ImageDoc. Skipping addition to staticPositions.");
