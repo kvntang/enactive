@@ -6,6 +6,7 @@ import { useUserStore } from "@/stores/user";
 import { storeToRefs } from "pinia";
 import { computed, onMounted, ref } from "vue";
 import deleteButton from "../components/Canvas/deleteButton.vue";
+import saveButton from "../components/Canvas/saveButton.vue";
 import { fetchy } from "../utils/fetchy.js";
 
 // Define props
@@ -56,6 +57,18 @@ function refreshImages() {
     });
 }
 
+let selectedImageId = null; // Variable to store the selected image ID
+
+function handleSelectImage(imageId) {
+  selectedImageId = imageId; // Save the emitted imageId to the variable
+}
+
+function saveSelected() {
+  console.log("Saving...", selectedImageId); // This will log the selected image ID
+}
+
+
+
 //some sort of checker to see if database has that initial imagedoc, if it does. then show canvas.
 
 function deleteAll() {
@@ -72,6 +85,11 @@ function deleteAll() {
     <div v-if="isLoggedIn" class="delete-panel">
       <!-- <h2 class="canvas-message">{{ canvasMessage }}</h2> -->
       <deleteButton @deleteAll="deleteAll" />
+    </div>
+
+    <div v-if="isLoggedIn" class="save-panel">
+      <!-- <h2 class="canvas-message">{{ canvasMessage }}</h2> -->
+      <saveButton @saveSelected="saveSelected" />
     </div>
     <!-- 
     <div class="tips-panel">
@@ -117,13 +135,13 @@ function deleteAll() {
           <uploadButton @refreshImages="refreshImages" />
         </div>
 
-        <oneDCanvasComponent v-if="is1DCanvas" :images="images" @refreshImages="refreshImages" />
-        <twoDCanvasComponent v-else :images="images" @refreshImages="refreshImages" />
+        <oneDCanvasComponent v-if="is1DCanvas" :images="images" @refreshImages="refreshImages" @selectImage="handleSelectImage"/>
+        <twoDCanvasComponent v-else :images="images" @refreshImages="refreshImages"  @selectImage="handleSelectImage"/>
       </template>
     </section>
     <section v-else class="welcome-section">
       <div>
-        Welcome travelers!
+        Welcome!
         <br /><br />
         This is an experiment on image augmentation using diffusion-based techniques.
         <br /><br />
@@ -189,6 +207,21 @@ section {
   z-index: 1000; /* Places it above the canvas and other elements */
   width: auto; /* Width adjusts to the widest element */
 }
+
+
+.save-panel {
+  position: fixed; /* Keeps it fixed in place */
+  top: 53%; /* Adjust distance from the top of the viewport */
+  right: 20px; /* Adjust distance from the left of the viewport */
+  display: flex;
+  flex-direction: column; /* Stack elements vertically */
+  align-items: flex-start; /* Align elements to the start of the container */
+  padding: 10px;
+  border-radius: 8px;
+  z-index: 1000; /* Places it above the canvas and other elements */
+  width: auto; /* Width adjusts to the widest element */
+}
+
 
 .tips-panel {
   position: fixed; /* Keeps it fixed in place */
