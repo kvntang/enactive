@@ -195,7 +195,7 @@ section {
 /* Center the 1D/2D canvas text and arrange header */
 .delete-panel {
   position: fixed; /* Keeps it fixed in place */
-  top: 45%; /* Adjust distance from the top of the viewport */
+  top: 41%; /* Adjust distance from the top of the viewport */
   right: 20px; /* Adjust distance from the left of the viewport */
   display: flex;
   flex-direction: column; /* Stack elements vertically */
@@ -208,7 +208,7 @@ section {
 
 .save-panel {
   position: fixed; /* Keeps it fixed in place */
-  top: 53%; /* Adjust distance from the top of the viewport */
+  top: 49%; /* Adjust distance from the top of the viewport */
   right: 20px; /* Adjust distance from the left of the viewport */
   display: flex;
   flex-direction: column; /* Stack elements vertically */
