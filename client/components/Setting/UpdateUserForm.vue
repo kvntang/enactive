@@ -26,7 +26,7 @@ async function updatePassword() {
     <div class="content">
       <!-- <h2 class="page-title">Update User Details</h2> -->
       
-      <!-- <form @submit.prevent="updateUsername" class="form">
+      <form @submit.prevent="updateUsername" class="form">
         <fieldset>
           <legend>Change Username</legend>
           <div class="form-group">
@@ -39,7 +39,7 @@ async function updatePassword() {
             <button type="submit" class="submit-button">Update Username</button>
           </div>
         </fieldset>
-      </form> -->
+      </form> 
 
       <form @submit.prevent="updatePassword" class="form">
         <fieldset>
