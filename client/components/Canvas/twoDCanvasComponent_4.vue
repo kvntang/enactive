@@ -30,7 +30,7 @@ const props = defineProps<{
   images: ImageDoc[];
 }>();
 
-const emit = defineEmits(["refreshImages"]);
+const emit = defineEmits(["refreshImages", "selectImage"]);
 
 const canvasContainer = ref(null);
 
@@ -765,7 +765,9 @@ onMounted(() => {
 
           if (clickedBox) {
             selectedParentId = clickedBox._id ?? null;
-            console.log(`Selected parent ID: ${selectedParentId}`);
+            // console.log(`Selected parent ID: ${selectedParentId}`);
+            emit("selectImage", clickedBox._id); // Emit the selected image's _id
+
           }
         }
       };

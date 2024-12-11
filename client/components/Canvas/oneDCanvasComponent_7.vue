@@ -33,7 +33,7 @@ const props = defineProps<{
   images: ImageDoc[];
 }>();
 
-const emit = defineEmits(["refreshImages"]);
+const emit = defineEmits(["refreshImages", "selectImage"]);
 
 const canvasContainer = ref(null);
 
@@ -866,9 +866,9 @@ onMounted(() => {
             const [selectedImage] = staticPositions.splice(i, 1);
             staticPositions.push(selectedImage);
             selectedParentId = selectedImage._id || null;
-
-            console.log(`Square selected:`, selectedImage);
-            console.log(`Select ID is: ${selectedParentId}`);
+            emit("selectImage", selectedParentId); // Emit the selected image's _id
+            // console.log(`Square selected:`, selectedImage);
+            // console.log(`Select ID is: ${selectedParentId}`);
             break;
           }
         }
