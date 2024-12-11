@@ -57,17 +57,15 @@ function refreshImages() {
     });
 }
 
-let selectedImageId = null; // Variable to store the selected image ID
+let selectedImageId = "null"; // Variable to store the selected image ID
 
-function handleSelectImage(imageId) {
+function handleSelectImage(imageId: string) {
   selectedImageId = imageId; // Save the emitted imageId to the variable
 }
 
 function saveSelected() {
   console.log("Saving...", selectedImageId); // This will log the selected image ID
 }
-
-
 
 //some sort of checker to see if database has that initial imagedoc, if it does. then show canvas.
 
@@ -135,8 +133,8 @@ function deleteAll() {
           <uploadButton @refreshImages="refreshImages" />
         </div>
 
-        <oneDCanvasComponent v-if="is1DCanvas" :images="images" @refreshImages="refreshImages" @selectImage="handleSelectImage"/>
-        <twoDCanvasComponent v-else :images="images" @refreshImages="refreshImages"  @selectImage="handleSelectImage"/>
+        <oneDCanvasComponent v-if="is1DCanvas" :images="images" @refreshImages="refreshImages" @selectImage="handleSelectImage" />
+        <twoDCanvasComponent v-else :images="images" @refreshImages="refreshImages" @selectImage="handleSelectImage" />
       </template>
     </section>
     <section v-else class="welcome-section">
@@ -208,7 +206,6 @@ section {
   width: auto; /* Width adjusts to the widest element */
 }
 
-
 .save-panel {
   position: fixed; /* Keeps it fixed in place */
   top: 53%; /* Adjust distance from the top of the viewport */
@@ -221,7 +218,6 @@ section {
   z-index: 1000; /* Places it above the canvas and other elements */
   width: auto; /* Width adjusts to the widest element */
 }
-
 
 .tips-panel {
   position: fixed; /* Keeps it fixed in place */
