@@ -28,7 +28,7 @@ async function fetchImages() {
   try {
     const result = await fetchy(`/api/images/author/${currentUserID.value}`, "GET");
     console.log("Fetched images:", result);
-    images.value = result.images || []; 
+    images.value = result.images || [];
     // showUploadButton.value = images.value.length === 0; // Key change here
   } catch (err) {
     error.value = "Failed to load images. Please try again later.";
@@ -46,12 +46,14 @@ onMounted(() => {
 });
 
 function refreshImages() {
-  fetchImages().then(() => {
-    // showUploadButton.value = images.value.length === 0;
-    console.log("Images updated, showUploadButton:", showUploadButton.value);
-  }).catch((err) => {
-    console.error("Error during refreshImages:", err);
-  });
+  fetchImages()
+    .then(() => {
+      // showUploadButton.value = images.value.length === 0;
+      console.log("Images updated, showUploadButton:", showUploadButton.value);
+    })
+    .catch((err) => {
+      console.error("Error during refreshImages:", err);
+    });
 }
 
 //some sort of checker to see if database has that initial imagedoc, if it does. then show canvas.
@@ -71,7 +73,7 @@ const canvasMessage = computed(() => (props.is1DCanvas ? "1D Canvas" : "2D Canva
       <!-- <h2 class="canvas-message">{{ canvasMessage }}</h2> -->
       <deleteButton @deleteAll="deleteAll" />
     </div>
-<!-- 
+    <!-- 
     <div class="tips-panel">
       <h2>User Tips</h2>
       <div>
@@ -154,7 +156,7 @@ section {
   margin: 10px 0;
   padding: 10px;
   border-radius: 10px;
-  background: #FFFFFF;
+  background: #ffffff;
   /* box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3); */
 }
 
@@ -196,7 +198,7 @@ section {
   flex-direction: column; /* Stack elements vertically */
   align-items: flex-start; /* Align elements to the start of the container */
   padding: 10px;
-  background: rgba(255, 255, 255); 
+  background: transparent;
   border-radius: 8px;
   z-index: 1000; /* Places it above the canvas and other elements */
   width: auto; /* Width adjusts to the widest element */
