@@ -16,23 +16,32 @@ import RegisterForm from "@/components/Login/RegisterForm.vue";
 </template>
 
 <style scoped>
+body {
+  font-family: 'Courier New', Courier, monospace;
+  background-color: #f0f0f0;
+  margin: 0;
+  padding: 0;
+}
+
 .main-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   min-height: 100vh;
-  background-color: #1a1a1a;
+  background-color: #ffffff;
   color: white;
   padding: 20px;
 }
 
 h1 {
+  font-family: 'Courier New', Courier, monospace;
   text-align: center;
   margin: 20px 0;
 }
 
 .forms-section {
+  font-family: 'Courier New', Courier, monospace;
   width: 100%;
   max-width: 900px;
   display: flex;
@@ -48,6 +57,7 @@ h1 {
   gap: 30px;
   width: 100%;
 }
+
 
 @media (min-width: 768px) {
   .form-container {

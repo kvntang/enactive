@@ -57,9 +57,6 @@ function refreshImages() {
 //some sort of checker to see if database has that initial imagedoc, if it does. then show canvas.
 
 function deleteAll() {
-  // now the user said clear everything, so need to prompt for a new image
-  // bool upload
-  // display imageUploader
   refreshImages();
 }
 
@@ -71,10 +68,10 @@ const canvasMessage = computed(() => (props.is1DCanvas ? "1D Canvas" : "2D Canva
   <main>
     <!-- Fixed Floating Panel -->
     <div class="delete-panel">
-      <h2 class="canvas-message">{{ canvasMessage }}</h2>
+      <!-- <h2 class="canvas-message">{{ canvasMessage }}</h2> -->
       <deleteButton @deleteAll="deleteAll" />
     </div>
-
+<!-- 
     <div class="tips-panel">
       <h2>User Tips</h2>
       <div>
@@ -84,7 +81,7 @@ const canvasMessage = computed(() => (props.is1DCanvas ? "1D Canvas" : "2D Canva
         <br />
         - press "esc" to exist dragging mode
       </div>
-    </div>
+    </div> -->
 
     <!-- <div class="upload-panel">
       <h2>Upload an image to start!</h2>
@@ -139,38 +136,38 @@ h1 {
   text-align: center;
   margin: 20px 0;
 }
+
 main {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   min-height: 100vh;
-  background-color: #000000;
+  background-color: #FFFFFF;
   color: white;
   padding: 20px;
 }
+
 section {
   width: 100%;
   max-width: 1200px;
   margin: 10px 0;
   padding: 10px;
   border-radius: 10px;
-  background: #000000;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  background: #FFFFFF;
+  /* box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3); */
 }
 
 /* Center the 1D/2D canvas text and arrange header */
 .delete-panel {
   position: fixed; /* Keeps it fixed in place */
-  top: 100px; /* Adjust distance from the top of the viewport */
-  right: 0px; /* Adjust distance from the left of the viewport */
+  top: 45%; /* Adjust distance from the top of the viewport */
+  right: 20px; /* Adjust distance from the left of the viewport */
   display: flex;
   flex-direction: column; /* Stack elements vertically */
   align-items: flex-start; /* Align elements to the start of the container */
   padding: 10px;
-  background: rgba(26, 26, 26, 0.8); /* Semi-transparent background */
   border-radius: 8px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5); /* Optional shadow for visibility */
   z-index: 1000; /* Places it above the canvas and other elements */
   width: auto; /* Width adjusts to the widest element */
 }
@@ -185,23 +182,22 @@ section {
   padding: 10px;
   background: rgba(26, 26, 26, 0.8); /* Semi-transparent background */
   border-radius: 8px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5); /* Optional shadow for visibility */
+
   z-index: 1000; /* Places it above the canvas and other elements */
   width: auto; /* Width adjusts to the widest element */
 }
 
 .upload-panel {
   position: fixed; /* Keeps it fixed in place */
-  top: 80%; /* Position the panel in the middle vertically */
+  top: 45%; /* Position the panel in the middle vertically */
   left: 50%; /* Position the panel in the middle horizontally */
   transform: translate(-50%, -50%); /* Center the panel exactly */
   display: flex;
   flex-direction: column; /* Stack elements vertically */
   align-items: flex-start; /* Align elements to the start of the container */
   padding: 10px;
-  background: rgba(26, 26, 26, 0); /* Semi-transparent background */
+  background: rgba(255, 255, 255); 
   border-radius: 8px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5); /* Optional shadow for visibility */
   z-index: 1000; /* Places it above the canvas and other elements */
   width: auto; /* Width adjusts to the widest element */
 }

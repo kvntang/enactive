@@ -20,83 +20,71 @@ async function delete_() {
 
 <template>
   <main>
-    <h1>Settings for {{ currentUsername }}</h1>
     <section>
-      <div class="button-group">
-        <button class="primary-button" @click="logout">Logout</button>
-        <button class="error-button" @click="delete_">Delete User</button>
+      <div class="button-container">
+        <button class="primary-button logout-button" @click="logout">Logout</button>
+        <UpdateUserForm />
+        <button class="error-button delete-button" @click="delete_">Delete User</button>
       </div>
-      <UpdateUserForm />
     </section>
   </main>
 </template>
 
 <style scoped>
-/* Global font and background color */
-body {
-  font-family: "Arial", sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: #1a1a1a;
-  color: white;
-}
-
 main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  min-height: 100vh;
-  background-color: #1a1a1a;
-  color: white;
-  padding: 20px;
-}
-
-h1 {
-  text-align: center;
-  margin: 20px 0;
-}
-
-section {
-  width: 90%;
-  max-width: 1200px;
-  margin: 20px 0;
-  padding: 20px;
-  border-radius: 10px;
-  background: #2b2b2b;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
-}
-
-.button-group {
-  display: flex;
   justify-content: center;
+  min-height: 100vh;
+  background-color: white;
+  color: rgb(0, 0, 0);
+  padding: 20px;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 20px; /* Space between buttons */
-  margin-bottom: 20px;
+  width: 90%;
+  max-width: 400px;
+  gap: 20px;
+}
+
+.logout-button {
+  margin-top: auto;
+  align-self: center;
+}
+
+.delete-button {
+  margin-top: 180px;
+  align-self: center;
 }
 
 button {
-  display: inline-flex;
+  font-family: 'Courier New', Courier, monospace;
+  background-color: rgb(52, 29, 185);
+  color: rgb(255, 255, 255);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  min-width: 80px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px 20px;
-  margin: 0; /* Removed unnecessary margin here */
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  /* font-weight: bold; */
-  cursor: pointer;
-  transition: background 0.3s ease;
+  align-self: center;
 }
 
-/* Button Variants */
 .primary-button {
-  background: #007bff;
-  color: white;
+  background: rgb(52, 29, 185);
 }
 
 .primary-button:hover {
-  background: #0056b3;
+  background: #341db9;
 }
 
 .error-button {
@@ -108,20 +96,10 @@ button {
   background: #991b1b;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
-  section {
-    padding: 15px;
-  }
-
-  .button-group {
-    flex-direction: column; /* Stack buttons vertically on small screens */
-    gap: 15px; /* Space between buttons when stacked */
-  }
-
-  button {
-    width: 100%; /* Full width buttons on small screens */
-    justify-content: center;
+  .logout-button {
+    position: static;
+    margin-bottom: 20px;
   }
 }
 </style>
