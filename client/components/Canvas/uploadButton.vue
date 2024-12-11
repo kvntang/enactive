@@ -235,8 +235,8 @@ button {
 }
 
 button:disabled {
-  background-color: #000000; /* Gray background */
+  background-color: #ffffff; /* Gray background */
   cursor: not-allowed; /* Indicate it's not clickable */
-  opacity: 0.2; /* Slightly transparent */
+  opacity: 0.0; 
 }
 </style>

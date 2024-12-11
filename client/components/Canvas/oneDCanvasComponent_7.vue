@@ -208,7 +208,7 @@ onMounted(() => {
 
       //-------------------SETUP----------------------------------------------------------------------------
       p.setup = async () => {
-        const canvasWidth = p.windowWidth - 40;
+        const canvasWidth = p.windowWidth + 100;
         const canvasHeight = p.windowHeight - 120;
         const canvas = p.createCanvas(canvasWidth, canvasHeight);
         canvas.parent(canvasContainer.value);
@@ -315,8 +315,21 @@ onMounted(() => {
       //-------------------DRAW----------------------------------------------------------------------------
       p.draw = async () => {
         p.background(255);
-        // draw clean light grey dotted background
-        
+  
+        // Draw faint light grey dotted background
+        const dotSpacing = 30; // Adjust spacing between dots
+        const dotSize = 3; // Size of each dot
+        p.push();
+        p.stroke(200, 200, 200, 120); // Light grey with low opacity
+        p.strokeWeight(dotSize); // Use dotSize for strokeWeight
+        for (let x = 0; x < p.width; x += dotSpacing) {
+          for (let y = 0; y < p.height; y += dotSpacing) {
+            p.point(x, y);
+            // Alternatively, use p.ellipse for better visibility
+            // p.ellipse(x, y, dotSize, dotSize);
+          }
+        }
+        p.pop();
 
         p.push();
         p.scale(scaleFactor);
@@ -345,10 +358,10 @@ onMounted(() => {
               let midPointX = (parentCenterX + childCenterX) / 2;
               let midPointY = parentCenterY;
 
-              p.fill(0); // Set text color to white
+              // p.fill(0); // Set text color to white
               p.textAlign(p.CENTER, p.CENTER); // Center the text
               let text = `${child.type} ${child.step}`; //concat
-              p.text(text, midPointX, midPointY - 15); 
+              // p.text(text, midPointX, midPointY - 15); 
               // create caption at the bottom of the image
               // p.text(child.caption, child.pos.x + gridSize / 2 +50, child.currentY + gridSize / 2 + 20);
 
@@ -356,6 +369,7 @@ onMounted(() => {
               let triangleSize = 5 / scaleFactor; // Adjust size based on zoom level
               if (childCenterX > parentCenterX) {
                 // Pointing right
+                p.fill(255);
                 p.triangle(
                   midPointX - triangleSize,
                   midPointY - triangleSize, // Left point
@@ -366,6 +380,7 @@ onMounted(() => {
                 );
               } else {
                 // Pointing left
+                p.fill(255);
                 p.triangle(
                   midPointX + triangleSize,
                   midPointY - triangleSize, // Right point
@@ -480,8 +495,8 @@ onMounted(() => {
 
               const promptWord = prompts[sp.promptIndex]; //pick the right word
 
-              p.fill(255);
-              p.textAlign(p.CENTER, p.CENTER);
+              // p.fill(255);
+              // p.textAlign(p.CENTER, p.CENTER);
               // p.text(promptWord, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2);
             } catch (e) {
               console.error(`Error parsing promptList for ImageDoc ID: ${sp._id}`, e);
@@ -513,7 +528,7 @@ onMounted(() => {
 
             // Draw drag line centered on the square
             p.stroke(0);
-            p.strokeWeight(2 / scaleFactor);
+            p.strokeWeight(1 / scaleFactor);
             p.line(lineX, lineStartY, lineX, mouseYWorld);
 
             // Calculate prompt steps (number of grid units dragged)
@@ -534,6 +549,13 @@ onMounted(() => {
             const cleanedPromptList = lastImage.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
             const prompts = cleanedPromptList.split(",").map((word) => word.trim());
             const promptWord = prompts[promptSteps]; //pick the right word
+            if (lastImage.type === "denoise") {
+              p.fill(140, 255, 0);
+              p.noStroke();
+            } else{
+              p.fill(52, 29, 185);
+              p.noStroke();
+            }
             p.text(promptWord, lastImage.pos.x + gridSize * 2, newY + gridSize / 2);
           } else if (Math.abs(dragDistanceX) > gridSize / 2) {
             // Horizontal dragging (noise/denoise)
@@ -546,7 +568,7 @@ onMounted(() => {
             // Draw preview line
             let lineY = lastImage.pos.y + gridSize / 2;
             p.stroke(0);
-            p.strokeWeight(2 / scaleFactor);
+            p.strokeWeight(1 / scaleFactor);
             p.line(lastImage.pos.x + gridSize / 2, lineY, newX + gridSize / 2, lineY);
 
             // Draw preview square
@@ -861,7 +883,7 @@ onMounted(() => {
 
       p.windowResized = () => {
         // Adjust the canvas size on window resize
-        const canvasWidth = p.windowWidth - 40;
+        const canvasWidth = p.windowWidth + 100;
         const canvasHeight = p.windowHeight - 120;
         p.resizeCanvas(canvasWidth, canvasHeight);
 
@@ -901,6 +923,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+
 .canvas-container {
   display: flex;
   justify-content: center;
@@ -909,9 +932,11 @@ onMounted(() => {
   padding: 20px;
   background: #FFFFFF;
   border-radius: 10px;
-  /* box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3); */
-  overflow: hidden;
+  /* Remove or adjust overflow if necessary */
+  /* overflow: hidden; */
+  width: 100%; /* Ensure the container can expand */
 }
+
 
 canvas {
   display: block;

@@ -216,16 +216,16 @@ onMounted(() => {
       let selectedParentId: string | null = null;
 
       //0. Conversion
-      const stepFactor = 40;
+      const stepFactor = 50;
 
       //-------------------SETUP----------------------------------------------------------------------------
       p.setup = async () => {
-        const canvasWidth = p.windowWidth - 40;
+        const canvasWidth = p.windowWidth + 100;
         const canvasHeight = p.windowHeight - 120;
         const canvas = p.createCanvas(canvasWidth, canvasHeight);
         canvas.parent(canvasContainer.value);
         ///1. Initialize the first ImageDoc if staticPositions is empty
-        // Initival Vector
+        // Initial Vector
         initialPosition = p.createVector(0, 0); // Start at (0, 0) in world coordinates
         camPos = initialPosition.copy(); // Center camera on initial position
 
@@ -314,7 +314,21 @@ onMounted(() => {
 
       //-------------------DRAW----------------------------------------------------------------------------
       p.draw = () => {
+
         p.background(255);
+  
+        // Draw faint light grey dotted background
+        const dotSpacing = 30; // Adjust spacing between dots
+        const dotSize = 3; // Size of each dot
+        p.push();
+        p.stroke(200, 200, 200, 120); // Light grey with low opacity
+        p.strokeWeight(dotSize); // Use dotSize for strokeWeight
+        for (let x = 0; x < p.width; x += dotSpacing) {
+          for (let y = 0; y < p.height; y += dotSpacing) {
+            p.point(x, y);
+          }
+        }
+        p.pop();
 
         p.push();
         // Apply camera transformations
@@ -334,17 +348,32 @@ onMounted(() => {
 
             // Draw the connecting line
             p.stroke(0);
+            p.strokeWeight(1);
             p.line(parentPos.x, parentPos.y, sp.pos.x, sp.pos.y);
 
             // Calculate the midpoint
             const midX = (parentPos.x + sp.pos.x) / 2;
             const midY = (parentPos.y + sp.pos.y) / 2;
 
-            // Render the promptIndex at the midpoint
-            p.noStroke();
-            p.fill(255); // Text color
-            p.textAlign(p.CENTER, p.CENTER);
-            // p.text(sp.step, midX, midY);
+            // Calculate the angle of the line
+            const dx = sp.pos.x - parentPos.x;
+            const dy = sp.pos.y - parentPos.y;
+            const angle = Math.atan2(dy, dx);
+
+            // // Draw arrow at the end
+            // const triangleSizeEnd = 5 / scaleFactor;
+            // drawArrow(sp.pos.x, sp.pos.y, angle, triangleSizeEnd);
+
+            // Draw triangle at the midpoint
+            const triangleSizeMid = 5 / scaleFactor;
+            p.push();
+            p.translate(midX, midY);
+            p.rotate(angle);
+            // p.fill(0);
+            // p.strokeWeight(1);
+            // p.stroke(255);
+            p.triangle(-triangleSizeMid, -triangleSizeMid, -triangleSizeMid, triangleSizeMid, triangleSizeMid, 0);
+            p.pop();
           }
         });
 
@@ -369,7 +398,6 @@ onMounted(() => {
           p.fill(255);
           p.textAlign(p.CENTER, p.CENTER);
 
-          // In draw function, modify the promptList parsing:-------------------------------------------------
           if (sp.promptList) {
             try {
               const cleanedPromptList = sp.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
@@ -445,6 +473,7 @@ onMounted(() => {
 
             p.textSize(14);
             p.fill(0);
+            p.noStroke();
             p.text(promptWord, lineEnd.x, lineEnd.y);
             p.text(point.type, point.pos.x, point.pos.y - dynamicRadius - 30);
           }
@@ -464,8 +493,6 @@ onMounted(() => {
             point.isMoving = false;
 
             // Add to static positions with the actual _id from the created ImageDoc
-            // Assuming that the ImageDoc has been created and props.images have been refreshed
-            // Find the newly created ImageDoc based on coordinates
             const newImage = props.images.find((img) => img.coordinate === `${Math.round(point.pos.x)},${Math.round(point.pos.y)}`);
 
             if (newImage) {
@@ -480,7 +507,7 @@ onMounted(() => {
                 originalImage: newImage.originalImage,
                 p5Image: newImage.originalImage ? p.loadImage(newImage.originalImage) : null,
                 caption: newImage.caption,
-                promptList: newImage.promptList,
+                promptList: newImage.promptList || "",
               });
 
               // Automatically select the new ImageDoc as the parent
@@ -597,7 +624,6 @@ onMounted(() => {
           point.step = convertedStep;
 
           const { promptIndex } = getPromptIndex(type, snappedAngleDegrees);
-          // const stepString = (convertedStep*10).toString();
           const coordinate = `${Math.round(finalPos.x)},${Math.round(finalPos.y)}`;
           const parentId = selectedParentId;
 
@@ -739,10 +765,6 @@ onMounted(() => {
 
           if (clickedBox) {
             selectedParentId = clickedBox._id ?? null;
-            //   const selectedParent = props.images.find(img => img._id === selectedParentId);
-            // if (selectedParent) {
-            //   point.promptList = selectedParent.promptList;
-            // }
             console.log(`Selected parent ID: ${selectedParentId}`);
           }
         }
@@ -779,13 +801,28 @@ onMounted(() => {
       };
 
       p.windowResized = () => {
-        const canvasWidth = p.windowWidth - 70;
+        const canvasWidth = p.windowWidth + 100;
         const canvasHeight = p.windowHeight - 120;
         p.resizeCanvas(canvasWidth, canvasHeight);
       };
 
       function mouseInCanvas() {
         return p.mouseX >= 0 && p.mouseX <= p.width && p.mouseY >= 0 && p.mouseY <= p.height;
+      }
+
+      // Helper function to draw a rotated triangle
+      function drawArrow(x: number, y: number, angle: number, size: number) {
+        p.push();
+        p.translate(x, y);
+        p.rotate(angle);
+        
+        // Set fill color to white to match existing triangle
+        p.strokeWeight(1);
+        p.stroke(0, 0, 0);
+        p.fill(255);
+        p.triangle(-size, -size / 2, -size, size / 2, size, 0);
+        
+        p.pop();
       }
 
       /**
@@ -815,6 +852,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
+
 .canvas-container {
   display: flex;
   justify-content: center;
@@ -823,9 +861,10 @@ onMounted(() => {
   padding: 20px;
   background: #FFFFFF;
   border-radius: 10px;
-  overflow: hidden;
+  /* Remove or adjust overflow if necessary */
+  /* overflow: hidden; */
+  width: 100%; /* Ensure the container can expand */
 }
-
 canvas {
   display: block;
 }
