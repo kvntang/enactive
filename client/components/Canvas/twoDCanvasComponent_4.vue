@@ -387,17 +387,65 @@ onMounted(() => {
           p.push();
           p.rectMode(p.CENTER);
 
+          // Determine if the current square is selected
+          const isSelected = sp._id === selectedParentId;
+
           if (sp.p5Image) {
             p.imageMode(p.CENTER);
+            
+            // Apply shadow only if the square is selected
+            if (isSelected) {
+              // Set shadow properties
+              p.drawingContext.shadowOffsetX = 3;
+              p.drawingContext.shadowOffsetY = 3;
+              p.drawingContext.shadowBlur = 12;
+              p.drawingContext.shadowColor = 'rgba(20, 20, 20, 0.08)';
+            } else {
+              // Reset shadow properties for non-selected squares
+              p.drawingContext.shadowOffsetX = 0;
+              p.drawingContext.shadowOffsetY = 0;
+              p.drawingContext.shadowBlur = 0;
+              p.drawingContext.shadowColor = 'rgba(0, 0, 0, 0)';
+            }
+
+            // Draw the image
             p.image(sp.p5Image, sp.pos.x, sp.pos.y, 70, 70); // Display image
-            p.noFill();
-            p.stroke(sp._id === selectedParentId ? 255 : 0, sp._id === selectedParentId ? 255 : 0, 0, sp._id === selectedParentId ? 255 : 0);
-            p.strokeWeight(2);
-            p.rect(sp.pos.x, sp.pos.y, 70, 70);
+
+            // Draw the yellow outline if selected
+            if (isSelected) {
+              p.noFill();
+              p.stroke(255, 255, 0); // Yellow color
+              p.strokeWeight(2 / scaleFactor);
+              p.rect(sp.pos.x, sp.pos.y, 70, 70);
+            }
           } else {
+            // Apply shadow only if the square is selected
+            if (isSelected) {
+              // Set shadow properties
+              p.drawingContext.shadowOffsetX = 3;
+              p.drawingContext.shadowOffsetY = 3;
+              p.drawingContext.shadowBlur = 12;
+              p.drawingContext.shadowColor = 'rgba(20, 20, 20, 0.08)';
+            } else {
+              // Reset shadow properties for non-selected squares
+              p.drawingContext.shadowOffsetX = 0;
+              p.drawingContext.shadowOffsetY = 0;
+              p.drawingContext.shadowBlur = 0;
+              p.drawingContext.shadowColor = 'rgba(0, 0, 0, 0)';
+            }
+
+            // Draw the placeholder rectangle
             p.fill(sp.color);
             p.noStroke();
             p.rect(sp.pos.x, sp.pos.y, 70, 70); // Draw placeholder
+
+            // Draw the yellow outline if selected
+            if (isSelected) {
+              p.noFill();
+              p.stroke(255, 255, 0); // Yellow color
+              p.strokeWeight(2 / scaleFactor);
+              p.rect(sp.pos.x, sp.pos.y, 70, 70);
+            }
           }
           p.pop();
 
@@ -422,7 +470,9 @@ onMounted(() => {
               const cleanedPromptList = sp.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
               const prompts = cleanedPromptList.split(",").map((word) => word.trim());
 
-              const promptWord = prompts[sp.promptIndex]; //pick the right word
+              const promptWord = prompts[sp.promptIndex] || "";
+              // You can uncomment the line below to display the promptWord if needed
+              // p.text(promptWord, sp.pos.x, sp.pos.y + 40);
             } catch (e) {
               console.log(`Error parsing promptList for ImageDoc ID: ${sp._id}`);
             }
@@ -488,7 +538,7 @@ onMounted(() => {
           if (selectedParent && selectedParent.promptList) {
             const cleanedPromptList = selectedParent.promptList.replace(/^"|"$/g, "");
             const prompts = cleanedPromptList.split(",").map((word) => word.trim());
-            const promptWord = prompts[promptIndex];
+            const promptWord = prompts[promptIndex] || "";
 
             p.textSize(14);
             p.fill(0);
@@ -657,7 +707,7 @@ onMounted(() => {
             },
             (err: Error) => {
               console.error("Failed to load image:", err);
-              staticPositions.pop(); // Remove the loading image
+              staticPositions.pop(); // Remove loading image
             },
           );
 

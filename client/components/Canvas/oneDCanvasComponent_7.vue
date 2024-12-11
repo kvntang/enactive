@@ -434,12 +434,26 @@ onMounted(() => {
               : p.color(140, 255, 0); // Vertical denoise
           }
 
-          // Highlight the last image with a yellow outline
-          if (sp === staticPositions[staticPositions.length - 1]) {
+          // Determine if the square is selected (last image or selectedParentId)
+          const isSelected = sp === staticPositions[staticPositions.length - 1] || sp._id === selectedParentId;
+
+          p.push(); // Save the current drawing state
+
+          if (isSelected) {
+            // Set shadow properties for the selected square
+            p.drawingContext.shadowOffsetX = 3;
+            p.drawingContext.shadowOffsetY = 3;
+            p.drawingContext.shadowBlur = 12;
+            p.drawingContext.shadowColor = 'rgba(20, 20, 20, 0.08)';
             p.stroke(255, 255, 0); // Yellow color
             p.strokeWeight(2 / scaleFactor);
           } else {
             p.noStroke(); // No stroke for other squares
+            // Reset shadow properties
+            p.drawingContext.shadowOffsetX = 0;
+            p.drawingContext.shadowOffsetY = 0;
+            p.drawingContext.shadowBlur = 0;
+            p.drawingContext.shadowColor = 'rgba(0, 0, 0, 0)';
           }
 
           // Draw the preloaded image
@@ -448,27 +462,29 @@ onMounted(() => {
             p.image(sp.p5Image, sp.pos.x, sp.currentY, gridSize, gridSize);
 
             if (sp._id === selectedParentId) {
-              p.stroke(255, 255, 0);
+              p.stroke(255, 255, 0); // Yellow color
               p.strokeWeight(2 / scaleFactor);
               p.noFill();
               p.rect(sp.pos.x, sp.currentY, gridSize, gridSize);
             }
           } else {
-            //Draw Main Box/image here!!!
+            // Draw the main colored square
             p.fill(squareColor);
-            p.rect(sp.pos.x, sp.currentY, gridSize, gridSize); //purple box
+            p.rect(sp.pos.x, sp.currentY, gridSize, gridSize); // Colored box
           }
 
           // Display the prompt index in the middle of the image -------------------------------------------------
           p.fill(255);
-          // display promptList
+          // Display promptList
           if (sp.promptList && sp.promptIndex !== undefined) {
             try {
               // Split the promptList into an array by commas and trim whitespace
               const cleanedPromptList = sp.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
               const prompts = cleanedPromptList.split(",").map((word) => word.trim());
 
-              const promptWord = prompts[sp.promptIndex]; //pick the right word
+              const promptWord = prompts[sp.promptIndex]; // Pick the right word
+              // You can display the promptWord if needed
+              // Example: p.text(promptWord, sp.pos.x + gridSize / 2, sp.currentY + gridSize + 5);
             } catch (e) {
               console.error(`Error parsing promptList for ImageDoc ID: ${sp._id}`, e);
             }
@@ -477,15 +493,12 @@ onMounted(() => {
           p.textAlign(p.CENTER, p.TOP);
           p.textWrap(p.WORD); // Wrap by word (use p.CHAR for character wrapping)
           const maxTextWidth = 140; // Set maximum width for wrapping
+          // Example: p.text(sp.caption, sp.pos.x + gridSize / 2, sp.currentY + gridSize + 10, maxTextWidth);
+
+          p.pop(); // Restore the drawing state
         }
 
         // Draw loading animations
-        // for (let sp of staticPositions) {
-        //   if (sp.isLoading) {
-        //     drawSpinner(p, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2, gridSize / 4, sp.spinnerAngle || 0);
-        //     sp.spinnerAngle = (sp.spinnerAngle || 0) + 5; // Increment angle for rotation
-        //   }
-        // }
         for (let sp of staticPositions) {
           if (sp.isLoading) {
             if (sp.type === "noise") {
@@ -503,7 +516,6 @@ onMounted(() => {
             sp.spinnerAngle = (sp.spinnerAngle || 0) + 5; // Increment angle for rotation
           }
         }
-
 
         if (isDragging) {
           // Adjust mouse coordinates for scaling and translation
@@ -548,7 +560,7 @@ onMounted(() => {
             p.fill(255);
             const cleanedPromptList = lastImage.promptList.replace(/^"|"$/g, ""); // Remove surrounding quotes
             const prompts = cleanedPromptList.split(",").map((word) => word.trim());
-            const promptWord = prompts[promptSteps]; //pick the right word
+            const promptWord = prompts[promptSteps]; // Pick the right word
             if (lastImage.type === "denoise") {
               p.fill(140, 255, 0);
               p.noStroke();
@@ -690,7 +702,7 @@ onMounted(() => {
             // Shift existing purples down
             shiftPurplesDown(newY);
 
-            // Create new purple square with loading state
+            // Create new colored square with loading state
             newImage = {
               pos: p.createVector(lastImage.pos.x, newY),
               color: lastImage.type === "noise" ? p.color(52, 29, 185) : p.color(140, 255, 0),
