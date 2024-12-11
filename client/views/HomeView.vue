@@ -57,16 +57,26 @@ function refreshImages() {
     });
 }
 
-let selectedImageId = "null"; // Variable to store the selected image ID
+let selectedImageString = "null"; // Variable to store the selected image ID
 
-function handleSelectImage(imageId: string) {
-  selectedImageId = imageId; // Save the emitted imageId to the variable
+function handleSelectImage(imageString: string) {
+  selectedImageString = imageString; // Save the emitted image\ to the variable
+  console.log(`Selected`);
 }
 
-function saveSelected() {
-  console.log("Saving...", selectedImageId); // This will log the selected image ID
+async function saveSelected() {
+  //fetchy, save the selectedimageid
+  try {
+    const response = await fetchy("/api/archive", "POST", {
+      body: { image: selectedImageString },
+    });
+    console.log("Saved"); // This will log the selected image ID
+  } catch (error) {
+    console.error("Error archiving ImageDoc:", error);
+    return null;
+  }
 }
-
+  
 //some sort of checker to see if database has that initial imagedoc, if it does. then show canvas.
 
 function deleteAll() {
