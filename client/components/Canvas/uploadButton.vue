@@ -183,42 +183,41 @@ const handleFileChange = (event: Event) => {
   </form>
 </template>
 
+
 <style scoped>
-.loading-animation {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100px; /* Adjust as needed */
-  margin-top: 5px; /* Reduce the margin to minimize the gap */
-  border-radius: 8px; /* Optional: add some rounding */
-}
-
-.spinner {
-  animation: spin 1s linear infinite; /* Add spinning animation */
-  width: 24px; /* Adjust size as needed */
-  height: 24px; /* Adjust size as needed */
-  margin-right: 10px; /* Space between spinner and text */
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 form {
+  position: relative; /* Add relative positioning to the form */
   background-color: rgba(0, 0, 0, 0);
   border-radius: 1em;
   display: flex;
   flex-direction: column;
   gap: 0.5em;
   padding: 1em;
-  width: 50%; /* Set a responsive width */
-  max-width: 40em; /* Ensure it doesn’t grow too large on wide screens */
-  margin: 1em auto; /* Center the article and add spacing between articles */
+  width: 50%;
+  max-width: 40em;
+  margin: 1em auto;
+}
+
+.loading-animation {
+  position: absolute; /* Position absolutely within the form */
+  top: 70%; 
+  left: 50%; 
+  transform: translate(-50%, -50%); /* Perfectly center the loading spinner */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10; /* Ensure it's above other elements */
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  width: 24px;
+  height: 24px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* change 'choose file' style */
