@@ -69,7 +69,7 @@ class Routes {
 
   //Archiving
 
-  @Router.get("/archive")
+  @Router.get("/archive/:author")
   async getArchiveByAuthor(author: string) {
     const id = new ObjectId(author); // Convert string to ObjectId
     const archives = await Archiving.getArchives(id); // Fetch images by author ID
@@ -77,13 +77,10 @@ class Routes {
   }
 
   @Router.post("/archive")
-  async createArchive(
-    session: SessionDoc,
-    image: string,
-  ) {
+  async createArchive(session: SessionDoc, image: string) {
     const author = Sessioning.getUser(session);
     const created = await Archiving.create(author, image);
-    return { msg: created.msg};
+    return { msg: created.msg };
   }
 
   //ImageDoc
@@ -124,15 +121,17 @@ class Routes {
   //Python Server
 
   @Router.post("/images/process")
-  @Router.validate(z.object({
-    type: z.string().refine(val => ['noise', 'denoise'].includes(val), { message: "Invalid type" }),
-    steps: z.number().int().positive(),
-    prompt_word: z.string().optional(),
-    original_image: z.string(),
-  }))
+  @Router.validate(
+    z.object({
+      type: z.string().refine((val) => ["noise", "denoise"].includes(val), { message: "Invalid type" }),
+      steps: z.number().int().positive(),
+      prompt_word: z.string().optional(),
+      original_image: z.string(),
+    }),
+  )
   async processImage(type: string, steps: number, prompt_word: string, original_image: string) {
     console.log("Process Image - Type:", type, "Steps:", steps);
-    
+
     const response = await fetch("https://app.unaliu.com/api/process", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -143,17 +142,16 @@ class Routes {
         original_image: original_image,
       }),
     });
-  
+
     if (!response.ok) {
       console.error(`Image processing failed with status: ${response.statusText}`);
       throw new Error(`Image processing failed: ${response.statusText}`);
     }
-  
+
     const jsonResponse = await response.json();
     console.log("Stable Diffusion Response:", jsonResponse);
     return jsonResponse;
   }
-  
 
   //OpenAI
 

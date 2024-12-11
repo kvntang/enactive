@@ -23,7 +23,7 @@ export default class ArchivingConcept {
   }
 
   async getArchives(user: ObjectId) {
-    return await this.archives.readMany({ creator: user }, { sort: { timePeriod: -1 } });
+    return await this.archives.readMany({ author: user }, { sort: { timePeriod: -1 } });
   }
 }
 

@@ -23,7 +23,19 @@ export default class ImageConcept {
     this.images = new DocCollection<ImageDoc>(collectionName);
   }
 
-  async create(author: ObjectId, parent: ObjectId, coordinate: string, type: string, step: string, prompt?: string, originalImage?: string, steppedImage?: string, promptedImage?: string, caption?: string, promptList?: string) {    
+  async create(
+    author: ObjectId,
+    parent: ObjectId,
+    coordinate: string,
+    type: string,
+    step: string,
+    prompt?: string,
+    originalImage?: string,
+    steppedImage?: string,
+    promptedImage?: string,
+    caption?: string,
+    promptList?: string,
+  ) {
     const _id = await this.images.createOne({
       author,
       parent,
@@ -34,10 +46,10 @@ export default class ImageConcept {
       originalImage: originalImage || "",
       steppedImage: steppedImage || "",
       promptedImage: promptedImage || "",
-      caption: caption || "kevin", 
-      promptList: promptList || "no list"
+      caption: caption || "kevin",
+      promptList: promptList || "no list",
     });
-  
+
     return { msg: "Image successfully created!", image: await this.images.readOne({ _id }) };
   }
 

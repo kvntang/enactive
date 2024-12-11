@@ -76,7 +76,7 @@ async function saveSelected() {
     return null;
   }
 }
-  
+
 //some sort of checker to see if database has that initial imagedoc, if it does. then show canvas.
 
 function deleteAll() {

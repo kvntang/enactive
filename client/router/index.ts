@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import { useUserStore } from "@/stores/user";
 import HomeView from "../views/HomeView.vue";
+import ArchiveView from "../views/ArchiveView.vue";
 import LoginView from "../views/LoginView.vue";
 import NotFoundView from "../views/NotFoundView.vue";
 import SettingView from "../views/SettingView.vue";
@@ -14,6 +15,11 @@ const router = createRouter({
       path: "/",
       name: "Home",
       component: HomeView,
+    },
+    {
+      path: "/",
+      name: "Archive",
+      component: ArchiveView,
     },
     {
       path: "/setting",
