@@ -45,11 +45,11 @@ async function register() {
 
 <style scoped>
 .form {
+  font-family: 'Courier New', Courier, monospace;
   width: 100%;
   max-width: 400px;
-  background: #2b2b2b;
+  background: #ffffff;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   padding: 25px;
   box-sizing: border-box;
 }
@@ -63,7 +63,7 @@ fieldset {
 legend {
   font-size: 1.4rem;
   margin-bottom: 15px;
-  color: #f0f0f0;
+  color: #000000;
   text-align: center;
 }
 
@@ -74,6 +74,7 @@ legend {
 }
 
 input {
+  font-family: 'Courier New', Courier, monospace;
   padding: 12px 15px;
   font-size: 1rem;
   border: 1px solid #ccc;
@@ -88,18 +89,25 @@ input:focus {
 }
 
 .primary-button {
-  padding: 12px;
-  font-size: 1rem;
-  background: #007bff;
-  color: #fff;
+  font-family: 'Courier New', Courier, monospace;
+  background-color: rgb(52, 29, 185);
+  color: rgb(255, 255, 255);
   border: none;
-  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  min-width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: background 0.3s ease;
 }
 
 .primary-button:hover {
-  background: #0056b3;
+  background: #341db9;
 }
 
 @media (max-width: 480px) {
