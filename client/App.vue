@@ -89,8 +89,8 @@ body {
   font-family: 'Courier New', Courier, monospace;
   margin: 0;
   padding: 0;
-  background-color: #FFFFFF;
-  color: rgb(0, 0, 0);
+  background-color: transparent;
+  color: rgba(0, 0, 0);
 }
 
 nav {
@@ -100,11 +100,10 @@ nav {
   width: 100%; /* Spans the full width of the page */
   z-index: 1000; /* Ensures it stays above other elements */
   padding: 1em 2em; /* Adds vertical and horizontal padding */
-  background-color: rgba(26, 26, 26, 0);
+  background-color: transparent;
   display: flex;
   align-items: center;
   justify-content: space-between; /* Ensures proper spacing between title and nav links */
-
   box-sizing: border-box; /* Ensures padding doesn't affect width calculations */
 }
 
