@@ -67,6 +67,7 @@ async function getChatGPTResponse(prompt: string) {
     throw error;
   }
 }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const createImageDoc = async (): Promise<ImageDoc | null> => {
@@ -149,25 +150,64 @@ const handleFileChange = (event: Event) => {
 };
 </script>
 
+<!-- <template>
+  <form @submit.prevent="createImageDoc">
+    <input id="photo" type="file" accept="image/*" @change="handleFileChange" />
+    <button type="submit" class="pure-button-primary pure-button" :disabled="!photo">Upload</button>
+  </form>
+</template> -->
+
 <template>
   <form @submit.prevent="createImageDoc">
+    <label for="photo" class="custom-file-upload">Choose File</label>
     <input id="photo" type="file" accept="image/*" @change="handleFileChange" />
     <button type="submit" class="pure-button-primary pure-button" :disabled="!photo">Upload</button>
   </form>
 </template>
 
+
 <style scoped>
 form {
-  background-color: #3fa14c68;
+  background-color: rgba(0, 0, 0, 0);
   border-radius: 1em;
   display: flex;
   flex-direction: column;
   gap: 0.5em;
   padding: 1em;
-  width: 90%; /* Set a responsive width */
+  width: 50%; /* Set a responsive width */
   max-width: 40em; /* Ensure it doesn’t grow too large on wide screens */
   margin: 1em auto; /* Center the article and add spacing between articles */
 }
+
+/* change 'choose file' style */
+input[type="file"] {
+  display: none; /* Hide the default file input */
+}
+
+.custom-file-upload {
+  background-color: #4326ec;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  display: inline-block;
+  text-align: center;
+}
+
+.custom-file-upload:hover {
+  background-color: #341db9;
+}
+
+.custom-file-upload:disabled {
+  background-color: #000000;
+  cursor: not-allowed;
+  opacity: 0.2;
+}
+
 
 textarea {
   font-family: inherit;
@@ -176,6 +216,22 @@ textarea {
   padding: 0.5em;
   border-radius: 4px;
   resize: none;
+}
+
+button {
+  background-color: #8cff00;
+  color: black;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  min-width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 button:disabled {

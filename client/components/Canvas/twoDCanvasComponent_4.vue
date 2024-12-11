@@ -267,7 +267,7 @@ onMounted(() => {
             const x = parentPos.x + step * Math.cos(angleRadians);
             const y = parentPos.y + step * Math.sin(angleRadians);
 
-            let color = image.type === "noise" ? p.color(255, 0, 0) : p.color(0, 0, 255);
+            let color = image.type === "noise" ? p.color(146, 128, 255) : p.color(200, 255, 133);
 
             staticPositions.push({
               pos: p.createVector(x, y),
@@ -302,7 +302,7 @@ onMounted(() => {
           type: "", // "noise" or "denoise"
           promptIndex: 0, // Calculated from angle
         };
-        currentColor = p.color(0, 0, 255); // Set initial color to blue (denoise)
+        currentColor = p.color(200, 255, 133); // Set initial color to blue (denoise)
       };
 
       /**
@@ -314,7 +314,7 @@ onMounted(() => {
 
       //-------------------DRAW----------------------------------------------------------------------------
       p.draw = () => {
-        p.background(0);
+        p.background(255);
 
         p.push();
         // Apply camera transformations
@@ -333,7 +333,7 @@ onMounted(() => {
             const parentPos = idToPosition[sp.parent_id];
 
             // Draw the connecting line
-            p.stroke(150);
+            p.stroke(0);
             p.line(parentPos.x, parentPos.y, sp.pos.x, sp.pos.y);
 
             // Calculate the midpoint
@@ -344,7 +344,7 @@ onMounted(() => {
             p.noStroke();
             p.fill(255); // Text color
             p.textAlign(p.CENTER, p.CENTER);
-            p.text(sp.step, midX, midY);
+            // p.text(sp.step, midX, midY);
           }
         });
 
@@ -384,17 +384,17 @@ onMounted(() => {
             p.textAlign(p.CENTER, p.TOP);
             p.textWrap(p.WORD); // Wrap by word (use p.CHAR for character wrapping)
             const maxTextWidth = 140; // Set maximum width for wrapping
-            p.text(sp.caption, sp.pos.x - maxTextWidth / 2, sp.pos.y + 50, maxTextWidth);
+            // p.text(sp.caption, sp.pos.x - maxTextWidth / 2, sp.pos.y + 50, maxTextWidth);
           }
         });
 
         // Draw the moving point when dragging or moving-------------------------------------------------
-        // if (isDraggingNew || point.isMoving) {
-        //   p.fill(currentColor);
-        //   p.stroke(255);
-        //   p.rectMode(p.CENTER);
-        //   p.rect(point.pos.x, point.pos.y, 70, 70);
-        // }
+        if (isDraggingNew || point.isMoving) {
+          p.fill(currentColor);
+          p.stroke(255);
+          p.rectMode(p.CENTER);
+          p.rect(point.pos.x, point.pos.y, 70, 70);
+        }
 
         // Dragging feedback for creating new ImageDoc
         if (isDraggingNew) {
@@ -430,7 +430,7 @@ onMounted(() => {
           let direction = p.createVector(-Math.cos(snappedAngleRadians), -Math.sin(snappedAngleRadians)).mult(dynamicRadius);
 
           // Draw the launch line
-          p.stroke(255);
+          p.stroke(0);
           let lineEnd = p5.Vector.add(point.pos, direction);
           p.line(point.pos.x, point.pos.y, lineEnd.x, lineEnd.y);
 
@@ -443,8 +443,8 @@ onMounted(() => {
             const prompts = cleanedPromptList.split(",").map((word) => word.trim());
             const promptWord = prompts[promptIndex];
 
-            p.textSize(25);
-            p.fill(255);
+            p.textSize(14);
+            p.fill(0);
             p.text(promptWord, lineEnd.x, lineEnd.y);
             p.text(point.type, point.pos.x, point.pos.y - dynamicRadius - 30);
           }
@@ -471,7 +471,7 @@ onMounted(() => {
             if (newImage) {
               staticPositions.push({
                 pos: p.createVector(point.pos.x, point.pos.y),
-                color: newImage.type === "noise" ? p.color(255, 0, 0) : p.color(0, 0, 255),
+                color: newImage.type === "noise" ? p.color(146, 128, 255) : p.color(200, 255, 133),
                 type: newImage.type,
                 step: Number(newImage.step),
                 promptIndex: Number(newImage.prompt),
@@ -542,12 +542,12 @@ onMounted(() => {
           if (!initialDragDirection) {
             if (dragVector.x > 20) {
               initialDragDirection = "right";
-              currentColor = p.color(255, 0, 0); // Red for noise
+              currentColor = p.color(146, 128, 255); // Red for noise
               point.type = "noise";
               console.log("Shooting type set to 'noise'");
             } else if (dragVector.x < -20) {
               initialDragDirection = "left";
-              currentColor = p.color(0, 0, 255); // Blue for denoise
+              currentColor = p.color(200, 255, 133); // Blue for denoise
               point.type = "denoise";
               console.log("Shooting type set to 'denoise'");
             }
@@ -576,7 +576,7 @@ onMounted(() => {
 
           // Determine type based on drag direction
           const type = dragVector.x > 0 ? "noise" : "denoise";
-          currentColor = type === "denoise" ? p.color(0, 0, 255) : p.color(255, 0, 0);
+          currentColor = type === "denoise" ? p.color(200, 255, 133) : p.color(146, 128, 255);
 
           // Calculate step based on drag distance
           let step = dragVector.mag();
@@ -589,6 +589,12 @@ onMounted(() => {
 
           // Determine final position
           let finalPos = p5.Vector.add(point.pos, movementDirection);
+
+          // Set up flying animation
+          point.isMoving = true;
+          point.finalPos = finalPos;
+          point.type = type;
+          point.step = convertedStep;
 
           const { promptIndex } = getPromptIndex(type, snappedAngleDegrees);
           // const stepString = (convertedStep*10).toString();
@@ -695,7 +701,7 @@ onMounted(() => {
             // Add to staticPositions
             staticPositions.push({
               pos: p.createVector(finalPos.x, finalPos.y),
-              color: type === "noise" ? p.color(255, 0, 0) : p.color(0, 0, 255),
+              color: type === "noise" ? p.color(146, 128, 255) : p.color(200, 255, 133),
               type: type,
               step: convertedStep,
               promptIndex: promptIndex,
@@ -815,9 +821,8 @@ onMounted(() => {
   align-items: center;
   margin: 20px;
   padding: 20px;
-  background: #000000;
+  background: #FFFFFF;
   border-radius: 10px;
-  box-shadow: 0px 4px 10px rgb(0, 0, 0);
   overflow: hidden;
 }
 

@@ -229,7 +229,7 @@ onMounted(() => {
 
         //1. Initialize the first ImageDoc if staticPositions is empty
         // Initival Vector
-        initialPosition = p.createVector(0, 0);
+        initialPosition = p.createVector(0, gridSize);
 
         // Create New
         if (props.images.length === 0) {
@@ -251,7 +251,12 @@ onMounted(() => {
 
           // Function to set positions recursively ----------------------------------------------------
           function setPosition(image: ImageDoc, parentPosition: p5.Vector | null) {
-            let color: p5.Color = image.type === "noise" ? p.color(255, 0, 0) : image.type === "denoise" ? p.color(0, 0, 255) : p.color(128, 0, 128);
+            // let color: p5.Color = image.type === "noise" ? p.color(52, 29, 185) : image.type === "denoise" ? p.color(140, 255, 0) : p.color(128, 0, 128);
+            let color: p5.Color = image.type === "noise" 
+              ? p.color(146, 128, 255) 
+            : image.type === "denoise" 
+              ? p.color(200, 255, 133) 
+              : p.color(128, 0, 128);
 
             let posX: number;
             let posY: number;
@@ -309,7 +314,9 @@ onMounted(() => {
 
       //-------------------DRAW----------------------------------------------------------------------------
       p.draw = async () => {
-        p.background(0);
+        p.background(255);
+        // draw clean light grey dotted background
+        
 
         p.push();
         p.scale(scaleFactor);
@@ -327,7 +334,7 @@ onMounted(() => {
               let childCenterY = child.currentY + gridSize / 2;
 
               // Draw horizontal line from parent to the child's X
-              p.stroke(200, 200, 200); // Line color
+              p.stroke(0, 0, 0); // Line color
               p.strokeWeight(1 / scaleFactor);
               p.line(parentCenterX, parentCenterY, childCenterX, parentCenterY);
 
@@ -338,10 +345,10 @@ onMounted(() => {
               let midPointX = (parentCenterX + childCenterX) / 2;
               let midPointY = parentCenterY;
 
-              p.fill(255); // Set text color to white
+              p.fill(0); // Set text color to white
               p.textAlign(p.CENTER, p.CENTER); // Center the text
               let text = `${child.type} ${child.step}`; //concat
-              p.text(text, midPointX, midPointY - 15); // Adjust Y position to place text above the line
+              p.text(text, midPointX, midPointY - 15); 
               // create caption at the bottom of the image
               // p.text(child.caption, child.pos.x + gridSize / 2 +50, child.currentY + gridSize / 2 + 20);
 
@@ -375,9 +382,9 @@ onMounted(() => {
 
               // Set color based on type
               if (child.type === "noise") {
-                p.fill(255, 0, 0); // Red for noise
+                p.fill(52, 29, 185); // Red for noise
               } else if (child.type === "denoise") {
-                p.fill(0, 0, 255); // Blue for denoise
+                p.fill(140, 255, 0); // Blue for denoise
               } else {
                 // p.fill(128, 0, 128); // Purple for other types
               }
@@ -415,16 +422,26 @@ onMounted(() => {
           }
 
           let squareColor;
-
-          // RED BLUE BOX ------------------------------------------------------------------
           if (sp._id == sp.parent_id) {
             squareColor =
               sp.type === "noise"
-                ? p.color(255, 0, 0) // Red for noise
-                : p.color(0, 0, 255); // Blue for denoise
+                ? p.color(146, 128, 255) // Horizontal noise
+                : p.color(200, 255, 133); // Horizontal denoise
           } else {
-            squareColor = p.color(128, 0, 128);
+            squareColor = sp.type === "noise" 
+              ? p.color(52, 29, 185) // Vertical noise
+              : p.color(140, 255, 0); // Vertical denoise
           }
+
+          // RED BLUE BOX ------------------------------------------------------------------
+          // if (sp._id == sp.parent_id) {
+          //   squareColor =
+          //     sp.type === "noise"
+          //       ? p.color(52, 29, 185) // Red for noise
+          //       : p.color(140, 255, 0); // Blue for denoise
+          // } else {
+          //   squareColor = p.color(128, 0, 128);
+          // }
           // PURPLE BOX ------------------------------------------------------------------
 
           // Highlight the last image with a yellow outline
@@ -465,7 +482,7 @@ onMounted(() => {
 
               p.fill(255);
               p.textAlign(p.CENTER, p.CENTER);
-              p.text(promptWord, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2);
+              // p.text(promptWord, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2);
             } catch (e) {
               console.error(`Error parsing promptList for ImageDoc ID: ${sp._id}`, e);
             }
@@ -474,7 +491,7 @@ onMounted(() => {
           p.textAlign(p.CENTER, p.TOP);
           p.textWrap(p.WORD); // Wrap by word (use p.CHAR for character wrapping)
           const maxTextWidth = 140; // Set maximum width for wrapping
-          p.text(sp.caption, sp.pos.x + gridSize / 2 - maxTextWidth / 2, sp.currentY + gridSize / 2 + 50, maxTextWidth);
+          // p.text(sp.caption, sp.pos.x + gridSize / 2 - maxTextWidth / 2, sp.currentY + gridSize / 2 + 50, maxTextWidth);
         }
 
         if (isDragging) {
@@ -495,7 +512,7 @@ onMounted(() => {
             let lineStartY = lastImage.pos.y + gridSize / 2;
 
             // Draw drag line centered on the square
-            p.stroke(255);
+            p.stroke(0);
             p.strokeWeight(2 / scaleFactor);
             p.line(lineX, lineStartY, lineX, mouseYWorld);
 
@@ -508,7 +525,7 @@ onMounted(() => {
 
             // Draw drag preview as an outline rectangle
             p.noFill(); // Remove fill
-            p.stroke(lastImage.type ? p.color(255, 0, 0) : p.color(0, 0, 255)); // Set stroke color based on state
+            p.stroke(lastImage.type ? p.color(52, 29, 185) : p.color(140, 255, 0)); // Set stroke color based on state
             p.strokeWeight(1 / scaleFactor); // Consistent stroke weight
             p.rect(lastImage.pos.x, lastImage.pos.y + (gridSize + padding) * promptSteps, gridSize, gridSize);
 
@@ -528,13 +545,13 @@ onMounted(() => {
 
             // Draw preview line
             let lineY = lastImage.pos.y + gridSize / 2;
-            p.stroke(255);
+            p.stroke(0);
             p.strokeWeight(2 / scaleFactor);
             p.line(lastImage.pos.x + gridSize / 2, lineY, newX + gridSize / 2, lineY);
 
             // Draw preview square
             p.noFill();
-            p.stroke(direction === "noise" ? p.color(255, 0, 0) : p.color(0, 0, 255));
+            p.stroke(direction === "noise" ? p.color(146, 128, 255) : p.color(200, 255, 133));
             p.strokeWeight(1 / scaleFactor);
             p.rect(newX, lastImage.pos.y, gridSize, gridSize);
 
@@ -639,7 +656,7 @@ onMounted(() => {
             // Create new purple square
             newImage = {
               pos: p.createVector(lastImage.pos.x, newY),
-              color: lastImage.type === "noise" ? p.color(255, 0, 0) : p.color(0, 0, 255),
+              color: lastImage.type === "noise" ? p.color(52, 29, 185) : p.color(140, 255, 0),
               type: lastImage.type,
               step: lastImage.step,
               promptIndex: validPromptSteps,
@@ -770,7 +787,8 @@ onMounted(() => {
               // Add new image state
               newImage = {
                 pos: p.createVector(newX, lastImage.pos.y),
-                color: isNoisy ? p.color(255, 0, 0, 255) : p.color(0, 0, 255, 255), // Red for noise, Blue for denoise
+                // color: isNoisy ? p.color(52, 29, 185, 255) : p.color(140, 255, 0, 255), // Red for noise, Blue for denoise
+                color: isNoisy ? p.color(146, 128, 255) : p.color(200, 255, 133),
                 type: direction,
                 step: steps,
                 promptIndex: lastImage.promptIndex ?? 0, // Keep existing promptIndex or default to 0
@@ -889,9 +907,9 @@ onMounted(() => {
   align-items: center;
   margin: 20px;
   padding: 20px;
-  background: #000000;
+  background: #FFFFFF;
   border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  /* box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3); */
   overflow: hidden;
 }
 
