@@ -63,7 +63,7 @@ function deleteAll() {
 }
 
 // Dynamic message based on the canvas type
-const canvasMessage = computed(() => (props.is1DCanvas ? "1D Canvas" : "2D Canvas"));
+// const canvasMessage = computed(() => (props.is1DCanvas ? "1D Canvas" : "2D Canvas"));
 </script>
 
 <template>
@@ -120,6 +120,22 @@ const canvasMessage = computed(() => (props.is1DCanvas ? "1D Canvas" : "2D Canva
         <oneDCanvasComponent v-if="is1DCanvas" :images="images" @refreshImages="refreshImages" />
         <twoDCanvasComponent v-else :images="images" @refreshImages="refreshImages" />
       </template>
+    </section>
+    <section v-else class="welcome-section">
+      <div>
+        Welcome!
+        <br /><br />
+        This is an experiment on image augmentation using diffusion-based techniques.
+        <br /><br />
+        You’ll explore how subtle changes in entropy and noise can shape your results. Our interface makes it easy to guide prompts and navigate the latent spaces of your images.
+
+        <br /><br />
+        Ready to explore and experiment? Let’s get started!
+        <br /><br />
+        Kevin and Una
+        <br />
+        fall 2024
+      </div>
     </section>
   </main>
 </template>
@@ -215,5 +231,21 @@ body {
   padding: 0;
   background-color: #000000;
   color: white;
+}
+
+.welcome-section {
+  display: flex; /* Use flexbox for centering */
+  justify-content: center; /* Center horizontally */
+  position: absolute; /* Positioning to control vertical placement */
+  top: 40%; /* 40% from the top of the viewport */
+  left: 50%; /* Center horizontally */
+  transform: translate(-50%, -50%); /* Adjust to center the element */
+  font-size: large; /* Set the font size here */
+  font-family: "Courier New", Courier, monospace;
+  color: rgb(52, 29, 185);
+  max-width: 600px; /* Restrict the maximum width */
+  width: 100%; /* Allow it to be responsive */
+  padding: 0 20px; /* Optional: Add some padding for smaller screens */
+  text-align: center; /* Center text within the div */
 }
 </style>
