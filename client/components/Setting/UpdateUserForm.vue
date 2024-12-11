@@ -2,8 +2,8 @@
 import { useUserStore } from "@/stores/user";
 import { ref } from "vue";
 
-let username = ref("");
-let currentPassword = ref("");
+let username = ref(""); 
+let currentPassword = ref(""); 
 let newPassword = ref("");
 
 const { updateUserUsername, updateUserPassword, updateSession } = useUserStore();
@@ -22,108 +22,140 @@ async function updatePassword() {
 </script>
 
 <template>
-  <h2>Update user details</h2>
-  <form @submit.prevent="updateUsername" class="pure-form">
-    <fieldset>
-      <legend>Change your username</legend>
-      <div class="form-group">
-        <input type="text" placeholder="New username" v-model="username" required />
-        <button type="submit" class="pure-button pure-button-primary">Update username</button>
-      </div>
-    </fieldset>
-  </form>
+  <main class="container">
+    <div class="content">
+      <!-- <h2 class="page-title">Update User Details</h2> -->
+      
+      <!-- <form @submit.prevent="updateUsername" class="form">
+        <fieldset>
+          <legend>Change Username</legend>
+          <div class="form-group">
+            <input 
+              type="text" 
+              placeholder="New username" 
+              v-model="username" 
+              required 
+            />
+            <button type="submit" class="submit-button">Update Username</button>
+          </div>
+        </fieldset>
+      </form> -->
 
-  <form @submit.prevent="updatePassword" class="pure-form">
-    <fieldset>
-      <legend>Change your password</legend>
-      <div class="form-group">
-        <input type="password" placeholder="Old password" v-model="currentPassword" required />
-        <input type="password" placeholder="New password" v-model="newPassword" required />
-        <button type="submit" class="pure-button pure-button-primary">Update password</button>
-      </div>
-    </fieldset>
-  </form>
+      <form @submit.prevent="updatePassword" class="form">
+        <fieldset>
+          <legend>Change Password</legend>
+          <div class="form-group">
+            <input 
+              type="password" 
+              placeholder="Current password" 
+              v-model="currentPassword" 
+              required 
+            />
+            <input 
+              type="password" 
+              placeholder="New password" 
+              v-model="newPassword" 
+              required 
+            />
+            <button type="submit" class="submit-button">Update Password</button>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+  </main>
 </template>
 
 <style scoped>
+h2 {
+  font-family: 'Courier New', Courier, monospace;
+}
+
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
-  padding: 20px;
-  background-color: #f9f9f9;
+  min-height: 20vh;
+  padding: 10px;
+  background-color: white;
 }
 
 .content {
-  max-width: 600px;
   width: 100%;
-  background: #fff;
+  max-width: 400px;
+  background: white;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.page-title {
+  text-align: center;
+  margin-bottom: 20px;
+  color: rgb(52, 29, 185);
+}
+
+.form {
+  width: 100%;
+  margin-bottom: 20px;
 }
 
 fieldset {
   border: none;
   padding: 0;
   margin: 0;
+  width: 100%;
 }
 
 legend {
-  font-size: 1.2rem;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1rem;
   margin-bottom: 10px;
-  color: white;
+  text-align: left;
+  width: 100%;
 }
 
 .form-group {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-direction: column;
+  gap: 15px;
   align-items: center;
 }
 
 input {
-  flex: 1;
+  width: 100%;
   padding: 10px;
-  font-size: 1rem;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.875rem;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
 
-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 20px;
-  margin: 0;
+.submit-button {
+  font-family: 'Courier New', Courier, monospace;
+  background-color: rgb(52, 29, 185);
+  color: white;
   border: none;
-  border-radius: 4px;
-  background: #007BFF;
-  color: #fff;
-  font-size: 1rem;
-  /* font-weight: bold; */
+  padding: 0.75rem 1.5rem;
+  border-radius: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
   cursor: pointer;
   transition: background 0.3s ease;
+  width: 100%;
+  max-width: 200px;
 }
 
-button:hover {
-  background: #0056b3;
+.submit-button:hover {
+  background: #341db9;
 }
 
 @media (max-width: 768px) {
   .content {
-    padding: 15px;
-  }
-
-  .form-group {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  button {
-    width: 100%;
+    width: 90%;
+    padding: 20px;
   }
 }
 </style>
