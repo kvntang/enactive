@@ -6,6 +6,8 @@ import { fetchy } from "../../utils/fetchy";
 // Hugging Face Inference instance
 const inference = new HfInference("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");
 
+const isLoading = ref(false);
+
 interface ImageDoc {
   author: string;
   parent: string;
@@ -17,7 +19,7 @@ interface ImageDoc {
   steppedImage: string;
   promptedImage: string;
   _id: string;
-  caption: string; 
+  caption: string;
   promptList: string;
 }
 
@@ -40,7 +42,7 @@ const generateCaption = async (imageBase64: string): Promise<string> => {
   try {
     const base64Data = imageBase64.split(",")[1];
     const byteCharacters = atob(base64Data);
-    const byteNumbers = Array.from(byteCharacters, char => char.charCodeAt(0));
+    const byteNumbers = Array.from(byteCharacters, (char) => char.charCodeAt(0));
     const byteArray = new Uint8Array(byteNumbers);
     const blob = new Blob([byteArray], { type: "image/jpeg" });
 
@@ -71,6 +73,10 @@ async function getChatGPTResponse(prompt: string) {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const createImageDoc = async (): Promise<ImageDoc | null> => {
+  console.log("Starting to create ImageDoc..."); // Debug log
+  isLoading.value = true; // Start loading
+  console.log("Loading state set to true."); // Debug log
+
   try {
     let base64Photo = null;
     let caption = "";
@@ -90,7 +96,7 @@ const createImageDoc = async (): Promise<ImageDoc | null> => {
     // 2. Get 36 prompts in a list
     console.log("Waiting for ChatGPT response...");
     let promptList = null;
-    
+
     try {
       promptList = await getChatGPTResponse(caption); // Wait for ChatGPT response
       console.log("ChatGPT Response:", promptList);
@@ -128,6 +134,9 @@ const createImageDoc = async (): Promise<ImageDoc | null> => {
   } catch (error) {
     console.error("Error creating ImageDoc:", error);
     return null;
+  } finally {
+    isLoading.value = false; // Stop loading
+    console.log("Loading state set to false."); // Debug log
   }
 };
 
@@ -161,12 +170,45 @@ const handleFileChange = (event: Event) => {
   <form @submit.prevent="createImageDoc">
     <label for="photo" class="custom-file-upload">Choose File</label>
     <input id="photo" type="file" accept="image/*" @change="handleFileChange" />
-    <button type="submit" class="pure-button-primary pure-button" :disabled="!photo">Upload</button>
+
+    <!-- Upload Button -->
+    <button type="submit" class="pure-button-primary pure-button" :disabled="!photo || isLoading">Upload</button>
+
+    <!-- Loading animation (optional) -->
+    <div v-if="isLoading" class="loading-animation">
+      <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="path" cx="12" cy="12" r="10" stroke="blue" stroke-width="10" stroke-linecap="round"></circle>
+      </svg>
+    </div>
   </form>
 </template>
 
-
 <style scoped>
+.loading-animation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100px; /* Adjust as needed */
+  margin-top: 5px; /* Reduce the margin to minimize the gap */
+  border-radius: 8px; /* Optional: add some rounding */
+}
+
+.spinner {
+  animation: spin 1s linear infinite; /* Add spinning animation */
+  width: 24px; /* Adjust size as needed */
+  height: 24px; /* Adjust size as needed */
+  margin-right: 10px; /* Space between spinner and text */
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 form {
   background-color: rgba(0, 0, 0, 0);
   border-radius: 1em;
@@ -208,7 +250,6 @@ input[type="file"] {
   opacity: 0.2;
 }
 
-
 textarea {
   font-family: inherit;
   font-size: inherit;
@@ -237,6 +278,6 @@ button {
 button:disabled {
   background-color: #ffffff; /* Gray background */
   cursor: not-allowed; /* Indicate it's not clickable */
-  opacity: 0.0; 
+  opacity: 0;
 }
 </style>
