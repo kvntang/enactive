@@ -48,9 +48,9 @@ export async function fetchy(
   const response = await fetch(fullUrl, fetchOptions);
   const result = await response.json();
 
-  if (options.alert && result.msg) {
-    useToastStore().showToast({ message: result.msg, style: response.ok ? "success" : "error" });
-  }
+  // if (options.alert && result.msg) {
+  //   useToastStore().showToast({ message: result.msg, style: response.ok ? "success" : "error" });
+  // }
 
   if (!response.ok) {
     throw new Error(result.msg ?? "Something went wrong");
