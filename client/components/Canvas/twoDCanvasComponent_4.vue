@@ -24,6 +24,8 @@ interface ImageDoc {
   p5Image?: p5.Image;
   caption: string;
   promptList: string;
+  isLoading?: boolean; // Loading state
+  spinnerAngle?: number; // Spinner rotation
 }
 
 const props = defineProps<{
@@ -194,6 +196,8 @@ onMounted(() => {
         p5Image?: p5.Image;
         caption: string;
         promptList: string;
+        isLoading?: boolean; // Loading state
+        spinnerAngle?: number; // Spinner rotation
       }[] = [];
 
       let currentColor: p5.Color;
@@ -217,6 +221,9 @@ onMounted(() => {
 
       //0. Conversion
       const stepFactor = 50;
+
+      // New flags for processing
+      let isProcessing = false;
 
       //-------------------SETUP----------------------------------------------------------------------------
       p.setup = async () => {
@@ -281,6 +288,8 @@ onMounted(() => {
               p5Image: image.originalImage ? p.loadImage(image.originalImage) : null,
               caption: image.caption,
               promptList: image.promptList || "",
+              isLoading: false,
+              spinnerAngle: 0,
             });
           });
 
@@ -360,18 +369,14 @@ onMounted(() => {
             const dy = sp.pos.y - parentPos.y;
             const angle = Math.atan2(dy, dx);
 
-            // // Draw arrow at the end
-            // const triangleSizeEnd = 5 / scaleFactor;
-            // drawArrow(sp.pos.x, sp.pos.y, angle, triangleSizeEnd);
-
-            // Draw triangle at the midpoint
+            // Draw triangle at the midpoint with conditional stroke color
             const triangleSizeMid = 5 / scaleFactor;
             p.push();
             p.translate(midX, midY);
             p.rotate(angle);
-            // p.fill(0);
-            // p.strokeWeight(1);
-            // p.stroke(255);
+            p.fill(255);
+            p.stroke(0, 0, 0);
+            p.strokeWeight(1);
             p.triangle(-triangleSizeMid, -triangleSizeMid, -triangleSizeMid, triangleSizeMid, triangleSizeMid, 0);
             p.pop();
           }
@@ -380,20 +385,34 @@ onMounted(() => {
         // Draw all static positions
         staticPositions.forEach((sp) => {
           p.push();
-          p.fill(sp.color);
-          p.stroke(sp._id === selectedParentId ? 255 : 0, sp._id === selectedParentId ? 255 : 0, 0, sp._id === selectedParentId ? 255 : 0);
-          p.strokeWeight(1);
           p.rectMode(p.CENTER);
 
           if (sp.p5Image) {
             p.imageMode(p.CENTER);
             p.image(sp.p5Image, sp.pos.x, sp.pos.y, 70, 70); // Display image
             p.noFill();
+            p.stroke(sp._id === selectedParentId ? 255 : 0, sp._id === selectedParentId ? 255 : 0, 0, sp._id === selectedParentId ? 255 : 0);
+            p.strokeWeight(2);
             p.rect(sp.pos.x, sp.pos.y, 70, 70);
           } else {
-            p.rect(sp.pos.x, sp.pos.y, 70, 70); // Fallback to rectangle
+            p.fill(sp.color);
+            p.noStroke();
+            p.rect(sp.pos.x, sp.pos.y, 70, 70); // Draw placeholder
           }
           p.pop();
+
+          // Draw spinner if loading
+          if (sp.isLoading) {
+            drawSpinner(
+              p,
+              sp.pos.x,
+              sp.pos.y,
+              16,
+              sp.spinnerAngle || 0,
+              sp.type // Pass the type here
+            );
+            sp.spinnerAngle = (sp.spinnerAngle || 0) + 5; // Increment angle for rotation
+          }
 
           p.fill(255);
           p.textAlign(p.CENTER, p.CENTER);
@@ -492,29 +511,10 @@ onMounted(() => {
             point.pos = point.finalPos.copy();
             point.isMoving = false;
 
-            // Add to static positions with the actual _id from the created ImageDoc
-            const newImage = props.images.find((img) => img.coordinate === `${Math.round(point.pos.x)},${Math.round(point.pos.y)}`);
-
-            if (newImage) {
-              staticPositions.push({
-                pos: p.createVector(point.pos.x, point.pos.y),
-                color: newImage.type === "noise" ? p.color(146, 128, 255) : p.color(200, 255, 133),
-                type: newImage.type,
-                step: Number(newImage.step),
-                promptIndex: Number(newImage.prompt),
-                _id: newImage._id,
-                parent_id: newImage.parent,
-                originalImage: newImage.originalImage,
-                p5Image: newImage.originalImage ? p.loadImage(newImage.originalImage) : null,
-                caption: newImage.caption,
-                promptList: newImage.promptList || "",
-              });
-
-              // Automatically select the new ImageDoc as the parent
-              selectedParentId = newImage._id;
-              console.log(`New parent selected: ${selectedParentId}`);
-            } else {
-              console.error("New ImageDoc not found in props.images. Ensure that 'refreshImages' emits correctly.");
+            // Trigger placeholder creation and async operations after movement ends
+            if (!isProcessing) {
+              isProcessing = true;
+              onMovementEnd();
             }
           } else {
             moveVector.setMag(speed);
@@ -522,6 +522,181 @@ onMounted(() => {
           }
         }
       };
+
+      // Function to handle actions after movement ends
+      const onMovementEnd = async () => {
+        // Add placeholder with loading state
+        staticPositions.push({
+          pos: p.createVector(point.finalPos.x, point.finalPos.y),
+          // color: point.type === "noise" ? p.color(146, 128, 255) : p.color(200, 255, 133),
+          color: point.type === "noise" ? p.color(52, 29, 185) : p.color(140, 255, 0),
+          type: point.type,
+          step: point.step,
+          promptIndex: point.promptIndex,
+          _id: "", // Temporary, will set after creation
+          parent_id: selectedParentId!,
+          originalImage: "", // Placeholder has no image yet
+          p5Image: undefined,
+          caption: "", // Placeholder caption
+          promptList: "", // Placeholder promptList
+          isLoading: true,
+          spinnerAngle: 0,
+        });
+
+        const loadingImage = staticPositions[staticPositions.length - 1];
+
+        // Proceed with async operations
+        try {
+          // Find parent image
+          const parentImage = staticPositions.find((sp) => sp._id === selectedParentId);
+          if (!parentImage || !parentImage.promptList) {
+            console.error("Parent image or promptList not found");
+            staticPositions.pop(); // Remove loading image
+            isProcessing = false;
+            return;
+          }
+
+          // Extract prompt word
+          const cleanedPromptList = parentImage.promptList.replace(/^"|"$/g, "");
+          const prompts = cleanedPromptList.split(",").map((word) => word.trim());
+          const promptWord = prompts[point.promptIndex] || "";
+
+          if (!promptWord) {
+            console.error("No valid prompt word found for the given prompt index.");
+            staticPositions.pop(); // Remove loading image
+            isProcessing = false;
+            return;
+          }
+
+          // Add this check before processing original_image
+          if (!parentImage.originalImage) {
+            console.error("parentImage.originalImage is undefined or invalid");
+            staticPositions.pop(); // Remove loading image
+            isProcessing = false;
+            return;
+          }
+
+          const pureBase64 = parentImage.originalImage.replace(/^data:image\/\w+;base64,/, "");
+
+          let steps = point.step;
+          let stepValue;
+          console.log(steps)
+          if (point.type === "noise") {
+            steps = Math.floor(Number(point.step) * 40);
+            stepValue = Number(steps) / 40;
+          } else {
+            steps = Math.floor(Number(point.step) * 10);
+            stepValue = Number(steps) / 10;
+          }
+          if (steps <= 0) {
+            console.error("Steps must be a positive integer");
+            staticPositions.pop(); // Remove loading image
+            isProcessing = false;
+            return;
+          }
+
+          // 1. Get Stable Diffusion response
+          console.log(">>>>>>>>> 1 running stable diffusion");
+          const generatedImage = await getStableDiffusionResponse(point.type, steps, promptWord, pureBase64);
+          console.log(">>>>>>>>> 4", steps);
+
+          if (!generatedImage) {
+            console.error("Stable Diffusion did not return a new image.");
+            staticPositions.pop(); // Remove loading image
+            isProcessing = false;
+            return;
+          }
+
+          // 2. Create caption
+          const caption = await generateCaption(`data:image/png;base64,${generatedImage}`);
+
+          // 3. Get ChatGPT response based on the caption
+          console.log("Waiting for ChatGPT response...");
+          let chatGPTResponse;
+          if (point.type === "denoise") {
+            try {
+              chatGPTResponse = await getChatGPTResponse(caption);
+              console.log("new ChatGPT prompt list for denoise:", chatGPTResponse);
+            } catch (error) {
+              console.error("Failed to get ChatGPT response:", error);
+              staticPositions.pop(); // Remove loading image
+              isProcessing = false;
+              return;
+            }
+          } else {
+            chatGPTResponse = parentImage.promptList;
+            console.log("inherited parent prompt list:", chatGPTResponse);
+          }
+          
+          // 4. Create ImageDoc with generated image
+          loadingImage.originalImage = `data:image/png;base64,${generatedImage}`;
+          loadingImage.caption = caption;
+          loadingImage.promptList = chatGPTResponse;
+
+          const coordinate = `${Math.round(point.finalPos.x)},${Math.round(point.finalPos.y)}`;
+          const createdImageDoc = await createImageDoc(selectedParentId!, coordinate, point.type, stepValue.toString(), point.promptIndex, `data:image/png;base64,${generatedImage}`, caption, chatGPTResponse);
+
+          if (!createdImageDoc || !createdImageDoc._id) {
+            console.error("Failed to create ImageDoc or missing ID");
+            staticPositions.pop(); // Remove loading image
+            isProcessing = false;
+            return;
+          }
+
+          createdImageDoc.caption = caption;
+          createdImageDoc.promptList = chatGPTResponse;
+
+          // Load the image
+          createdImageDoc.p5Image = p.loadImage(
+            createdImageDoc.originalImage,
+            () => {
+              console.log("Image loaded successfully!");
+              loadingImage.isLoading = false; // Stop loading
+              loadingImage._id = createdImageDoc._id;
+              loadingImage.p5Image = createdImageDoc.p5Image;
+            },
+            (err: Error) => {
+              console.error("Failed to load image:", err);
+              staticPositions.pop(); // Remove the loading image
+            },
+          );
+
+          // Update selectedParentId
+          selectedParentId = createdImageDoc._id;
+          console.log(`New image created: ${createdImageDoc._id}`);
+
+          // Trigger refresh to update images
+          emit("refreshImages");
+        } catch (error) {
+          console.error("Error in image creation process:", error);
+          staticPositions.pop(); // Remove loading image on error
+        } finally {
+          isProcessing = false;
+        }
+      };
+
+      // Function to draw a spinner at a given position
+      function drawSpinner(p: p5, x: number, y: number, size: number, angle: number, type: string) {
+        p.push();
+        p.translate(x, y);
+        p.rotate(p.radians(angle));
+        
+        // Set color based on type
+        if (type === "noise") {
+          p.stroke(140, 255, 0); // Green for noise
+        } else if (type === "denoise") {
+          p.stroke(52, 29, 185); // Blue for denoise
+        } else {
+          p.stroke(0); // Default color
+        }
+
+        p.strokeWeight(2 / scaleFactor);
+        p.noFill();
+        p.ellipse(0, 0, size, size);
+        p.line(0, -size / 2, 0, -size / 4);
+        p.pop();
+      }
+
 
       // Mouse interaction functions
       p.mousePressed = (event: MouseEvent) => {
@@ -582,7 +757,7 @@ onMounted(() => {
         }
       };
 
-      p.mouseReleased = async () => {
+      p.mouseReleased = () => {
         if (isPanning) {
           isPanning = false;
           return;
@@ -624,130 +799,10 @@ onMounted(() => {
           point.step = convertedStep;
 
           const { promptIndex } = getPromptIndex(type, snappedAngleDegrees);
+          point.promptIndex = promptIndex;
           const coordinate = `${Math.round(finalPos.x)},${Math.round(finalPos.y)}`;
-          const parentId = selectedParentId;
 
-          if (!parentId) {
-            console.error("Parent ID is undefined");
-            return;
-          }
-
-          // Find parent image
-          const parentImage = staticPositions.find((sp) => sp._id === parentId);
-          if (!parentImage || !parentImage.promptList) {
-            console.error("Parent image or promptList not found");
-            return;
-          }
-
-          // Extract prompt word
-          const cleanedPromptList = parentImage.promptList.replace(/^"|"$/g, "");
-          const prompts = cleanedPromptList.split(",").map((word) => word.trim());
-          const promptWord = prompts[promptIndex] || "";
-
-          if (!promptWord) {
-            console.error("No valid prompt word found for the given prompt index.");
-            return;
-          }
-
-          // Add this check before processing original_image
-          if (!parentImage.originalImage) {
-            console.error("parentImage.originalImage is undefined or invalid");
-            return;
-          }
-
-          const pureBase64 = parentImage.originalImage.replace(/^data:image\/\w+;base64,/, "");
-
-          let steps = convertedStep;
-          let stepValue;
-          console.log(steps)
-          if (type === "noise") {
-            steps = Math.floor(Number(convertedStep) * 40);
-            stepValue = Number(steps) / 40;
-          } else {
-            steps = Math.floor(Number(convertedStep) * 10);
-            stepValue = Number(steps) / 10;
-          }
-          if (steps <= 0) {
-            console.error("Steps must be a positive integer");
-            return;
-          }
-
-          try {
-            // 1. Get Stable Diffusion response
-            console.log(">>>>>>>>> 1 running stable diffusion");
-            const generatedImage = await getStableDiffusionResponse(type, steps, promptWord, pureBase64);
-            console.log(">>>>>>>>> 4", steps);
-
-            if (!generatedImage) {
-              console.error("Stable Diffusion did not return a new image.");
-              return;
-            }
-
-            // 2. Create caption
-            const caption = await generateCaption(`data:image/png;base64,${generatedImage}`);
-
-            // 3. Get ChatGPT response based on the caption
-            console.log("Waiting for ChatGPT response...");
-            let chatGPTResponse;
-            if (point.type === "denoise") {
-              try {
-                chatGPTResponse = await getChatGPTResponse(caption);
-                console.log("new ChatGPT prompt list for denoise:", chatGPTResponse);
-              } catch (error) {
-                console.error("Failed to get ChatGPT response:", error);
-                return;
-              }
-            } else {
-              chatGPTResponse = parentImage.promptList;
-              console.log("inherited parent prompt list:", chatGPTResponse);
-            }
-            
-            // 4. Create ImageDoc with generated image
-            const createdImageDoc = await createImageDoc(parentId, coordinate, type, stepValue.toString(), promptIndex, `data:image/png;base64,${generatedImage}`, caption, chatGPTResponse);
-
-            if (!createdImageDoc || !createdImageDoc._id) {
-              // console.error("Failed to create ImageDoc or missing ID");
-              return;
-            }
-
-            createdImageDoc.caption = caption;
-            createdImageDoc.promptList = chatGPTResponse;
-
-            // Load the image
-            createdImageDoc.p5Image = p.loadImage(
-              createdImageDoc.originalImage,
-              () => {
-                console.log("Image loaded successfully!");
-              },
-              (err: Error) => {
-                console.error("Failed to load image:", err);
-              },
-            );
-
-            // Add to staticPositions
-            staticPositions.push({
-              pos: p.createVector(finalPos.x, finalPos.y),
-              color: type === "noise" ? p.color(146, 128, 255) : p.color(200, 255, 133),
-              type: type,
-              step: convertedStep,
-              promptIndex: promptIndex,
-              _id: createdImageDoc._id,
-              parent_id: parentId,
-              originalImage: createdImageDoc.originalImage,
-              p5Image: createdImageDoc.p5Image,
-              caption: createdImageDoc.caption,
-              promptList: createdImageDoc.promptList,
-            });
-
-            // Update selectedParentId
-            selectedParentId = createdImageDoc._id;
-            console.log(`New image created: ${createdImageDoc._id}`);
-
-            // Trigger refresh to update images
-            emit("refreshImages");
-          } catch (error) {
-            console.error("Error in image creation process:", error);
-          }
+          // Update point properties
         }
       };
 
@@ -765,9 +820,7 @@ onMounted(() => {
 
           if (clickedBox) {
             selectedParentId = clickedBox._id ?? null;
-            // console.log(`Selected parent ID: ${selectedParentId}`);
             emit("selectImage", clickedBox._id); // Emit the selected image's _id
-
           }
         }
       };
@@ -863,9 +916,8 @@ onMounted(() => {
   padding: 20px;
   background: #FFFFFF;
   border-radius: 10px;
-  /* Remove or adjust overflow if necessary */
-  /* overflow: hidden; */
   width: 100%; /* Ensure the container can expand */
+  position: relative;
 }
 canvas {
   display: block;

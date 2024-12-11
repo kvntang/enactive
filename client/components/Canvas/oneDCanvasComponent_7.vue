@@ -26,9 +26,9 @@ interface ImageDoc {
   p5Image?: p5.Image; // store preloaded p5.Image
   caption: string;
   promptList: string;
+  isLoading?: boolean; // Flag for loading state
 }
 
-// from parent code
 const props = defineProps<{
   images: ImageDoc[];
 }>();
@@ -133,7 +133,6 @@ async function getStableDiffusionResponse(
   }
 }
 
-
 //--------------------------------------------------------------------------------------------------------------
 
 onMounted(() => {
@@ -151,7 +150,6 @@ onMounted(() => {
         step: number;
         promptIndex: number;
         _id?: string;
-        originalImage: string;
         parent_id?: string;
         isAnimating: boolean;
         currentY: number;
@@ -162,6 +160,9 @@ onMounted(() => {
         p5Image?: p5.Image;
         caption?: string;
         promptList: string;
+        isLoading?: boolean; // Flag for loading
+        spinnerAngle?: number; // Angle for spinner animation
+        originalImage?: string; // Add originalImage property
       }[] = [];
 
       let isDragging = false;
@@ -216,7 +217,7 @@ onMounted(() => {
         p.rectMode(p.CORNER); // Ensure rectMode is CORNER
 
         // Initialize camera translation to center at (0, 0)
-        translateX = canvasWidth / 2; // Start at 0 on X-axis
+        translateX = canvasWidth / 2 - gridSize; // Start at 0 on X-axis
         translateY = 0; // Start at 0 on Y-axis
 
         // Preload images for each imagDoc
@@ -251,12 +252,11 @@ onMounted(() => {
 
           // Function to set positions recursively ----------------------------------------------------
           function setPosition(image: ImageDoc, parentPosition: p5.Vector | null) {
-            // let color: p5.Color = image.type === "noise" ? p.color(52, 29, 185) : image.type === "denoise" ? p.color(140, 255, 0) : p.color(128, 0, 128);
             let color: p5.Color = image.type === "noise" 
               ? p.color(146, 128, 255) 
-            : image.type === "denoise" 
-              ? p.color(200, 255, 133) 
-              : p.color(128, 0, 128);
+              : image.type === "denoise" 
+                ? p.color(200, 255, 133) 
+                : p.color(128, 0, 128);
 
             let posX: number;
             let posY: number;
@@ -265,7 +265,6 @@ onMounted(() => {
               // Preserve original type's direction
               posX = parentPosition.x + (image.type === "noise" ? -1 : 1) * Number(image.step) * (gridSize + padding);
               posY = parentPosition.y + gridSize + padding;
-              // console.log(`Image type: ${image.type}, Step: ${image.step}, posX: ${posX}, posY: ${posY}`);
             } else {
               posX = initialPosition.x;
               posY = initialPosition.y;
@@ -295,6 +294,8 @@ onMounted(() => {
               p5Image: preloadedImage,
               caption: image.caption,
               promptList: image.promptList,
+              isLoading: false, // Initialize loading state
+              spinnerAngle: 0, // Initialize spinner angle
             });
 
             // Recursively set positions for children
@@ -325,8 +326,6 @@ onMounted(() => {
         for (let x = 0; x < p.width; x += dotSpacing) {
           for (let y = 0; y < p.height; y += dotSpacing) {
             p.point(x, y);
-            // Alternatively, use p.ellipse for better visibility
-            // p.ellipse(x, y, dotSize, dotSize);
           }
         }
         p.pop();
@@ -354,40 +353,29 @@ onMounted(() => {
               // Draw vertical line from the child's X to the child's Y
               p.line(childCenterX, parentCenterY, childCenterX, childCenterY);
 
-              // Display the "type" at the midpoint of the horizontal line
-              let midPointX = (parentCenterX + childCenterX) / 2;
-              let midPointY = parentCenterY;
-
-              // p.fill(0); // Set text color to white
-              p.textAlign(p.CENTER, p.CENTER); // Center the text
-              let text = `${child.type} ${child.step}`; //concat
-              // p.text(text, midPointX, midPointY - 15); 
-              // create caption at the bottom of the image
-              // p.text(child.caption, child.pos.x + gridSize / 2 +50, child.currentY + gridSize / 2 + 20);
-
               // Draw a triangle to indicate the direction
               let triangleSize = 5 / scaleFactor; // Adjust size based on zoom level
               if (childCenterX > parentCenterX) {
                 // Pointing right
                 p.fill(255);
                 p.triangle(
-                  midPointX - triangleSize,
-                  midPointY - triangleSize, // Left point
-                  midPointX - triangleSize,
-                  midPointY + triangleSize, // Bottom point
-                  midPointX + triangleSize,
-                  midPointY, // Right point
+                  (parentCenterX + childCenterX) / 2 - triangleSize,
+                  parentCenterY - triangleSize,
+                  (parentCenterX + childCenterX) / 2 - triangleSize,
+                  parentCenterY + triangleSize,
+                  (parentCenterX + childCenterX) / 2 + triangleSize,
+                  parentCenterY,
                 );
               } else {
                 // Pointing left
                 p.fill(255);
                 p.triangle(
-                  midPointX + triangleSize,
-                  midPointY - triangleSize, // Right point
-                  midPointX + triangleSize,
-                  midPointY + triangleSize, // Bottom point
-                  midPointX - triangleSize,
-                  midPointY, // Left point
+                  (parentCenterX + childCenterX) / 2 + triangleSize,
+                  parentCenterY - triangleSize,
+                  (parentCenterX + childCenterX) / 2 + triangleSize,
+                  parentCenterY + triangleSize,
+                  (parentCenterX + childCenterX) / 2 - triangleSize,
+                  parentCenterY,
                 );
               }
 
@@ -400,8 +388,6 @@ onMounted(() => {
                 p.fill(52, 29, 185); // Red for noise
               } else if (child.type === "denoise") {
                 p.fill(140, 255, 0); // Blue for denoise
-              } else {
-                // p.fill(128, 0, 128); // Purple for other types
               }
 
               // Draw the corner box
@@ -448,21 +434,10 @@ onMounted(() => {
               : p.color(140, 255, 0); // Vertical denoise
           }
 
-          // RED BLUE BOX ------------------------------------------------------------------
-          // if (sp._id == sp.parent_id) {
-          //   squareColor =
-          //     sp.type === "noise"
-          //       ? p.color(52, 29, 185) // Red for noise
-          //       : p.color(140, 255, 0); // Blue for denoise
-          // } else {
-          //   squareColor = p.color(128, 0, 128);
-          // }
-          // PURPLE BOX ------------------------------------------------------------------
-
           // Highlight the last image with a yellow outline
           if (sp === staticPositions[staticPositions.length - 1]) {
             p.stroke(255, 255, 0); // Yellow color
-            p.strokeWeight(1 / scaleFactor);
+            p.strokeWeight(2 / scaleFactor);
           } else {
             p.noStroke(); // No stroke for other squares
           }
@@ -474,7 +449,7 @@ onMounted(() => {
 
             if (sp._id === selectedParentId) {
               p.stroke(255, 255, 0);
-              p.strokeWeight(1 / scaleFactor);
+              p.strokeWeight(2 / scaleFactor);
               p.noFill();
               p.rect(sp.pos.x, sp.currentY, gridSize, gridSize);
             }
@@ -494,10 +469,6 @@ onMounted(() => {
               const prompts = cleanedPromptList.split(",").map((word) => word.trim());
 
               const promptWord = prompts[sp.promptIndex]; //pick the right word
-
-              // p.fill(255);
-              // p.textAlign(p.CENTER, p.CENTER);
-              // p.text(promptWord, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2);
             } catch (e) {
               console.error(`Error parsing promptList for ImageDoc ID: ${sp._id}`, e);
             }
@@ -506,8 +477,33 @@ onMounted(() => {
           p.textAlign(p.CENTER, p.TOP);
           p.textWrap(p.WORD); // Wrap by word (use p.CHAR for character wrapping)
           const maxTextWidth = 140; // Set maximum width for wrapping
-          // p.text(sp.caption, sp.pos.x + gridSize / 2 - maxTextWidth / 2, sp.currentY + gridSize / 2 + 50, maxTextWidth);
         }
+
+        // Draw loading animations
+        // for (let sp of staticPositions) {
+        //   if (sp.isLoading) {
+        //     drawSpinner(p, sp.pos.x + gridSize / 2, sp.currentY + gridSize / 2, gridSize / 4, sp.spinnerAngle || 0);
+        //     sp.spinnerAngle = (sp.spinnerAngle || 0) + 5; // Increment angle for rotation
+        //   }
+        // }
+        for (let sp of staticPositions) {
+          if (sp.isLoading) {
+            if (sp.type === "noise") {
+              p.stroke(140, 255, 0); // Green stroke for "noise"
+            } else if (sp.type === "denoise") {
+              p.stroke(52, 29, 185); // Blue stroke for "denoise"
+            }
+            drawSpinner(
+              p,
+              sp.pos.x + gridSize / 2,
+              sp.currentY + gridSize / 2,
+              16,
+              sp.spinnerAngle || 0
+            );
+            sp.spinnerAngle = (sp.spinnerAngle || 0) + 5; // Increment angle for rotation
+          }
+        }
+
 
         if (isDragging) {
           // Adjust mouse coordinates for scaling and translation
@@ -539,8 +535,12 @@ onMounted(() => {
             let newY = lastImage.pos.y + (gridSize + padding) * promptSteps;
 
             // Draw drag preview as an outline rectangle
-            p.noFill(); // Remove fill
-            p.stroke(lastImage.type ? p.color(52, 29, 185) : p.color(140, 255, 0)); // Set stroke color based on state
+            p.noFill(); 
+            if (lastImage.type === "denoise") {
+              p.stroke(p.color(200, 255, 133)); // Set stroke color based on state
+            } else {
+              p.stroke(p.color(52, 29, 185)); // Set stroke color based on state
+            }
             p.strokeWeight(1 / scaleFactor); // Consistent stroke weight
             p.rect(lastImage.pos.x, lastImage.pos.y + (gridSize + padding) * promptSteps, gridSize, gridSize);
 
@@ -585,6 +585,19 @@ onMounted(() => {
 
         p.pop();
       };
+
+      // Function to draw a spinner at a given position
+      function drawSpinner(p: p5, x: number, y: number, size: number, angle: number) {
+        p.push();
+        p.translate(x, y);
+        p.rotate(p.radians(angle));
+        // p.stroke(0, 0, 255);
+        p.strokeWeight(2 / scaleFactor);
+        p.noFill();
+        p.ellipse(0, 0, size, size);
+        p.line(0, -size / 2, 0, -size / 4);
+        p.pop();
+      }
 
       // Mouse interaction functions
       p.mousePressed = (event: MouseEvent) => {
@@ -662,6 +675,8 @@ onMounted(() => {
             p5Image?: p5.Image;
             caption?: string;
             promptList: string;
+            isLoading?: boolean;
+            spinnerAngle?: number;
           };
 
           if (Math.abs(dragDistanceY) > Math.abs(dragDistanceX) && dragDistanceY > gridSize / 2) {
@@ -675,14 +690,14 @@ onMounted(() => {
             // Shift existing purples down
             shiftPurplesDown(newY);
 
-            // Create new purple square
+            // Create new purple square with loading state
             newImage = {
               pos: p.createVector(lastImage.pos.x, newY),
               color: lastImage.type === "noise" ? p.color(52, 29, 185) : p.color(140, 255, 0),
               type: lastImage.type,
               step: lastImage.step,
               promptIndex: validPromptSteps,
-              originalImage: lastImage.originalImage, // Use the original image from the last image
+              originalImage: lastImage.originalImage || "", // Ensure originalImage is a string
               _id: undefined, // Will be set after backend response
               parent_id: lastImage._id,
               isAnimating: true,
@@ -692,20 +707,22 @@ onMounted(() => {
               animationStartTime: p.millis(),
               animationDuration: 500,
               promptList: lastImage.promptList,
+              isLoading: true, // Set loading to true
+              spinnerAngle: 0, // Initialize spinner angle
             };
 
             staticPositions.push(newImage);
 
             // Persist the new position to the backend
             const coordinate = `${Math.round(newImage.pos.x)},${Math.round(newImage.pos.y)}`;
-            // const steps = newImage.step.toString();
-            const pureBase64 = lastImage.originalImage.replace(/^data:image\/\w+;base64,/, "");
+            const pureBase64 = (lastImage.originalImage || "").replace(/^data:image\/\w+;base64,/, "");
             const cleanedPromptList = lastImage.promptList.replace(/^"|"$/g, "");
             const prompts = cleanedPromptList.split(",").map((word) => word.trim());
             const chosenPromptWord = prompts[newImage.promptIndex];
 
             if (!chosenPromptWord) {
               console.error("No valid prompt word found for the given prompt index.");
+              staticPositions.pop(); // Remove the loading image
               return; // Stop if we don't have a valid prompt
             }
 
@@ -718,12 +735,11 @@ onMounted(() => {
                 steps = Number(newImage.step)*10;
               }
               let sdBase64 = await getStableDiffusionResponse(newImage.type, steps, chosenPromptWord, pureBase64);
-              // console.log("1. Stable Diffusion Response:", sdBase64);
-
               newImage.originalImage = "data:image/png;base64," + sdBase64;
             } catch (error) {
               console.error("Failed to get Stable Diffusion response:", error);
-              return null;
+              staticPositions.pop(); // Remove the loading image
+              return;
             }
 
             // 2. create caption
@@ -735,7 +751,8 @@ onMounted(() => {
                 console.log("new image caption:", caption);
               } catch (error) {
                 console.error("Error converting image or generating caption:", error);
-                return null; // Exit early if there's an error with the caption
+                staticPositions.pop(); // Remove the loading image
+                return; // Exit early if there's an error with the caption
               }
             }
 
@@ -748,6 +765,7 @@ onMounted(() => {
                 console.log("new ChatGPT prompt list for denoise:", newImage.promptList);
               } catch (error) {
                 console.error("Failed to get ChatGPT response:", error);
+                staticPositions.pop(); // Remove the loading image
                 return;
               }
             } else {
@@ -756,14 +774,13 @@ onMounted(() => {
             }
 
             // 4. load image
-
-            (newImage.p5Image = p.loadImage(newImage.originalImage)),
-              () => {
-                console.log("Image loaded successfully!");
-              },
-              (err: Error) => {
-                console.error("Failed to load image:", err);
-              };
+            newImage.p5Image = p.loadImage(newImage.originalImage, () => {
+              console.log("Image loaded successfully!");
+              newImage.isLoading = false; // Stop loading
+            }, (err: Error) => {
+              console.error("Failed to load image:", err);
+              staticPositions.pop(); // Remove the loading image
+            });
 
             // 5. create imageDoc
             const createdImageDoc = await createImageDoc(
@@ -782,7 +799,6 @@ onMounted(() => {
               newImage.originalImage = createdImageDoc.originalImage;
               newImage.caption = createdImageDoc.caption;
               newImage.promptList = createdImageDoc.promptList;
-              // console.log("3. New ImageDoc created successfully:", createdImageDoc);
             } else {
               console.warn("Failed to create new ImageDoc. Removing new image from staticPositions.");
               staticPositions.pop();
@@ -797,7 +813,6 @@ onMounted(() => {
             }
           } else if (Math.abs(dragDistanceX) > gridSize / 2) {
             //----------------------------------------------------------------------------------------------------
-            //----------------------------------------------------------------------------------------------------
             // Horizontal dragging (noise/denoise)
             let steps = Math.floor(Math.abs(dragDistanceX) / stepDistance);
 
@@ -809,7 +824,6 @@ onMounted(() => {
               // Add new image state
               newImage = {
                 pos: p.createVector(newX, lastImage.pos.y),
-                // color: isNoisy ? p.color(52, 29, 185, 255) : p.color(140, 255, 0, 255), // Red for noise, Blue for denoise
                 color: isNoisy ? p.color(146, 128, 255) : p.color(200, 255, 133),
                 type: direction,
                 step: steps,
@@ -818,8 +832,10 @@ onMounted(() => {
                 parent_id: lastImage._id, // Link to the parent
                 isAnimating: false,
                 currentY: lastImage.pos.y,
-                originalImage: lastImage.originalImage, // Add originalImage property
+                originalImage: lastImage.originalImage || "", // Add originalImage property with default value
                 promptList: lastImage.promptList,
+                isLoading: false,
+                spinnerAngle: 0,
               };
 
               staticPositions.push(newImage);
@@ -867,8 +883,6 @@ onMounted(() => {
             staticPositions.push(selectedImage);
             selectedParentId = selectedImage._id || null;
             emit("selectImage", selectedParentId); // Emit the selected image's _id
-            // console.log(`Square selected:`, selectedImage);
-            // console.log(`Select ID is: ${selectedParentId}`);
             break;
           }
         }
@@ -932,11 +946,8 @@ onMounted(() => {
   padding: 20px;
   background: #FFFFFF;
   border-radius: 10px;
-  /* Remove or adjust overflow if necessary */
-  /* overflow: hidden; */
   width: 100%; /* Ensure the container can expand */
 }
-
 
 canvas {
   display: block;
