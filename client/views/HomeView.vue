@@ -69,7 +69,7 @@ function deleteAll() {
 <template>
   <main>
     <!-- Fixed Floating Panel -->
-    <div class="delete-panel">
+    <div v-if="isLoggedIn" class="delete-panel">
       <!-- <h2 class="canvas-message">{{ canvasMessage }}</h2> -->
       <deleteButton @deleteAll="deleteAll" />
     </div>
