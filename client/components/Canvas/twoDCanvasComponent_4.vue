@@ -870,7 +870,7 @@ onMounted(() => {
 
           if (clickedBox) {
             selectedParentId = clickedBox._id ?? null;
-            emit("selectImage", clickedBox._id); // Emit the selected image's _id
+            emit("selectImage", clickedBox.originalImage); // Emit the selected image's _id
           }
         }
       };
