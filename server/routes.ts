@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Authing, Imaging, Sessioning } from "./app";
+import { Authing, Imaging, Sessioning, Archiving } from "./app";
 import { SessionDoc } from "./concepts/sessioning";
 
 import { z } from "zod";
@@ -67,11 +67,27 @@ class Routes {
     return { msg: "Logged out!" };
   }
 
-  //image API routes
+  //Archiving
 
-  /**
-   * Create a new ImageDoc.
-   */
+  @Router.get("/archive")
+  async getArchiveByAuthor(author: string) {
+    const id = new ObjectId(author); // Convert string to ObjectId
+    const archives = await Archiving.getArchives(id); // Fetch images by author ID
+    return { archives };
+  }
+
+  @Router.post("/archive")
+  async createArchive(
+    session: SessionDoc,
+    image: string,
+  ) {
+    const author = Sessioning.getUser(session);
+    const created = await Archiving.create(author, image);
+    return { msg: created.msg};
+  }
+
+  //ImageDoc
+
   @Router.post("/images")
   async createImage(
     session: SessionDoc,
@@ -105,6 +121,8 @@ class Routes {
     return { msg: "All images deleted successfully!" };
   }
 
+  //Python Server
+
   @Router.post("/images/process")
   @Router.validate(z.object({
     type: z.string().refine(val => ['noise', 'denoise'].includes(val), { message: "Invalid type" }),
@@ -136,6 +154,8 @@ class Routes {
     return jsonResponse;
   }
   
+
+  //OpenAI
 
   @Router.post("/chatgpt")
   async handleChatGPTRequest(prompt: string) {
