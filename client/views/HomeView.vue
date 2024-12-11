@@ -143,7 +143,7 @@ main {
   align-items: center;
   justify-content: flex-start;
   min-height: 100vh;
-  background-color: rgba(255, 255, 255, 0);
+  background-color: rgba(255, 255, 255);
   color: white;
   padding: 20px;
 }
@@ -196,7 +196,7 @@ section {
   flex-direction: column; /* Stack elements vertically */
   align-items: flex-start; /* Align elements to the start of the container */
   padding: 10px;
-  background: rgba(255, 255, 255, 0); 
+  background: rgba(255, 255, 255); 
   border-radius: 8px;
   z-index: 1000; /* Places it above the canvas and other elements */
   width: auto; /* Width adjusts to the widest element */
