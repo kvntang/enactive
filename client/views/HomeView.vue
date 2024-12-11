@@ -123,7 +123,7 @@ function deleteAll() {
     </section>
     <section v-else class="welcome-section">
       <div>
-        Welcome!
+        Welcome travelers!
         <br /><br />
         This is an experiment on image augmentation using diffusion-based techniques.
         <br /><br />
@@ -240,7 +240,7 @@ body {
   top: 40%; /* 40% from the top of the viewport */
   left: 50%; /* Center horizontally */
   transform: translate(-50%, -50%); /* Adjust to center the element */
-  font-size: large; /* Set the font size here */
+  font-size: medium; /* Set the font size here */
   font-family: "Courier New", Courier, monospace;
   color: rgb(52, 29, 185);
   max-width: 600px; /* Restrict the maximum width */
