@@ -90,7 +90,7 @@ body {
   margin: 0;
   padding: 0;
   background-color: transparent;
-  color: rgba(0, 0, 0);
+  color: rgb(0, 0, 0);
 }
 
 nav {
@@ -172,7 +172,7 @@ ul {
 
 .slider:before {
   position: absolute;
-  content: "1D";
+  content: "2D";
   height: 26px;
   width: 26px;
   left: 4px;
@@ -193,8 +193,9 @@ input:checked + .slider {
 
 input:checked + .slider:before {
   transform: translateX(46px);
-  content: "2D";
+  content: "1D";
 }
+
 
 /* Icon Styles */
 .icon {
