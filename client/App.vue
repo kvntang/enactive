@@ -34,7 +34,7 @@ function toggleCanvas() {
       <div class="title">
         <img src="@/assets/images/logo.svg" />
         <RouterLink :to="{ name: 'Home' }">
-          <h1>Entropy Compass</h1>
+          <!-- <h1>Entropy Compass</h1> -->
         </RouterLink>
       </div>
       <ul>
@@ -43,18 +43,33 @@ function toggleCanvas() {
           <h1 v-else>Please login!</h1>
         </li>
         <li>
-          <RouterLink :to="{ name: 'Home' }" :class="{ underline: currentRouteName == 'Home' }"> Home </RouterLink>
+          <RouterLink :to="{ name: 'Home' }" :class="{ underline: currentRouteName == 'Home' }">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+              <!-- <path d="M12 3l8 8h-3v8h-10v-8H4l8-8z"/> -->
+              <path d="M12 2.1L1 12h3v9h7v-6h2v6h7v-9h3L12 2.1zm0 2.691l6 5.4V19h-3v-6H9v6H6v-8.809l6-5.4z"/>
+            </svg>
+          </RouterLink>
         </li>
         <li v-if="isLoggedIn">
-          <RouterLink :to="{ name: 'Settings' }" :class="{ underline: currentRouteName == 'Settings' }"> Settings </RouterLink>
+          <RouterLink :to="{ name: 'Settings' }" :class="{ underline: currentRouteName == 'Settings' }">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 15.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7z" />
+              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33h.09a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v.09a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
+            </svg>
+          </RouterLink>
         </li>
         <li v-else>
-          <RouterLink :to="{ name: 'Login' }" :class="{ underline: currentRouteName == 'Login' }"> Login </RouterLink>
+          <RouterLink :to="{ name: 'Login' }" :class="{ underline: currentRouteName == 'Login' }">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zM4 20v-2c0-3.31 2.69-6 6-6h4c3.31 0 6 2.69 6 6v2"/>
+            </svg>
+          </RouterLink>
         </li>
         <li v-if="isLoggedIn && currentRouteName === 'Home'">
-          <button @click="toggleCanvas">
-            {{ is1DCanvas ? "Switch to 2D Canvas" : "Switch to 1D Canvas" }}
-          </button>
+          <label class="switch">
+            <input type="checkbox" v-model="is1DCanvas" />
+            <span class="slider"></span>
+          </label>
         </li>
       </ul>
     </nav>
@@ -62,19 +77,20 @@ function toggleCanvas() {
       <p>{{ toast.message }}</p>
     </article>
   </header>
-  <!-- prop being passed into the child -->
+  <!-- Prop being passed into the child -->
   <RouterView :is1DCanvas="is1DCanvas" />
 </template>
+
 
 <style scoped>
 @import "./assets/toast.css";
 
 body {
-  font-family: "Arial", sans-serif;
+  font-family: 'Courier New', Courier, monospace;
   margin: 0;
   padding: 0;
-  background-color: #000000;
-  color: white;
+  background-color: #FFFFFF;
+  color: rgb(0, 0, 0);
 }
 
 nav {
@@ -88,15 +104,16 @@ nav {
   display: flex;
   align-items: center;
   justify-content: space-between; /* Ensures proper spacing between title and nav links */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0); /* Optional: Add a shadow for better visibility */
+
   box-sizing: border-box; /* Ensures padding doesn't affect width calculations */
 }
 
 h1 {
-  font-family: "Arial", sans-serif;
+  /* font-family: "roboto", sans-serif; */
+  font-family: 'Courier New', Courier, monospace;
   font-size: 1em;
   margin: 0;
-  color: white;
+  color: rgb(0, 0, 0);
 }
 
 .title {
@@ -111,8 +128,10 @@ img {
 
 a {
   font-size: large;
-  color: white;
+  color: rgb(0, 0, 0);
   text-decoration: none;
+  display: flex;
+  align-items: center;
 }
 
 ul {
@@ -126,5 +145,65 @@ ul {
 
 .underline {
   text-decoration: underline;
+}
+
+/* Toggle Switch Styles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 80px;
+  height: 34px;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0;
+  right: 0; bottom: 0;
+  background-color: #8cff00;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "1D";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+input:checked + .slider {
+  background-color: rgb(52, 29, 185);
+}
+
+input:checked + .slider:before {
+  transform: translateX(46px);
+  content: "2D";
+}
+
+/* Icon Styles */
+.icon {
+  /* fill: rgb(52, 29, 185);   */
+  /* stroke: rgb(52, 29, 185); */
+  width: 20px;
+  height: 20px;
+  margin-right: 0.5em;
+  vertical-align: middle;
 }
 </style>
