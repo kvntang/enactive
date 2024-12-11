@@ -243,7 +243,7 @@ body {
   font-size: medium; /* Set the font size here */
   font-family: "Courier New", Courier, monospace;
   color: rgb(52, 29, 185);
-  max-width: 600px; /* Restrict the maximum width */
+  max-width: 500px; /* Restrict the maximum width */
   width: 100%; /* Allow it to be responsive */
   padding: 0 20px; /* Optional: Add some padding for smaller screens */
   text-align: center; /* Center text within the div */
