@@ -18,7 +18,8 @@ const { currentUserID } = storeToRefs(useUserStore());
 
 const saveSelected = async () => {
   if (!props.selectedImageString || props.selectedImageString === "null") {
-    errorMessage.value = "Please select an image first";
+    // errorMessage.value = "Please select an image first";
+    console.log("No image selected");
     return;
   }
 
