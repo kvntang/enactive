@@ -124,6 +124,10 @@ onMounted(fetchArchive);
 </template>
 
 <style scoped>
+body{
+  background-color: white;
+}
+
 .date-group {
   margin-bottom: 2rem;
 }
@@ -161,6 +165,7 @@ onMounted(fetchArchive);
 }
 
 .archive-container {
+  background-color: white;
   max-width: 935px;
   margin: 0 auto;
   padding: 0 20px;
