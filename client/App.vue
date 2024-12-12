@@ -100,7 +100,7 @@ body {
   font-family: "Courier New", Courier, monospace;
   margin: 0;
   padding: 0;
-  background-color: transparent;
+  background-color: white;
   color: rgb(0, 0, 0);
 }
 
