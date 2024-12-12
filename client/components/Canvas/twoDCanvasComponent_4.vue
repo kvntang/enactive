@@ -843,8 +843,8 @@ onMounted(() => {
           // Normalize snappedAngleDegrees to 0-360
           snappedAngleDegrees = (snappedAngleDegrees + 360) % 360;
 
-          // Determine type based on drag direction
-          const type = dragVector.x > 0 ? "noise" : "denoise";
+          // Use the type set during dragging
+          const type = point.type;
           currentColor = type === "denoise" ? p.color(200, 255, 133) : p.color(146, 128, 255);
 
           // Calculate step based on drag distance
@@ -853,8 +853,11 @@ onMounted(() => {
           let convertedStep = Math.round(step / stepFactor);
           console.log("convertedStep:", convertedStep);
 
-          // Calculate movement direction
-          let movementDirection = p.createVector(-Math.cos(p.radians(snappedAngleDegrees)), -Math.sin(p.radians(snappedAngleDegrees))).setMag(step);
+          // Calculate movement direction based on snapped angle
+          let movementDirection = p.createVector(
+            -Math.cos(p.radians(snappedAngleDegrees)),
+            -Math.sin(p.radians(snappedAngleDegrees))
+          ).setMag(step);
 
           // Determine final position
           let finalPos = p5.Vector.add(point.pos, movementDirection);
@@ -862,16 +865,14 @@ onMounted(() => {
           // Set up flying animation
           point.isMoving = true;
           point.finalPos = finalPos;
-          point.type = type;
           point.step = convertedStep;
 
           const { promptIndex } = getPromptIndex(type, snappedAngleDegrees);
           point.promptIndex = promptIndex;
           const coordinate = `${Math.round(finalPos.x)},${Math.round(finalPos.y)}`;
-
-          // Update point properties
         }
-      };
+};
+
 
       p.doubleClicked = () => {
         if (mouseInCanvas()) {
