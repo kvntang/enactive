@@ -894,7 +894,7 @@ onMounted(() => {
             const [selectedImage] = staticPositions.splice(i, 1);
             staticPositions.push(selectedImage);
             selectedParentId = selectedImage._id || null;
-            emit("selectImage", selectedImage.originalImage); 
+            emit("selectImage", selectedImage.originalImage);
             break;
           }
         }
