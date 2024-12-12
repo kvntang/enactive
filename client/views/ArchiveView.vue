@@ -1,115 +1,180 @@
 <script setup lang="ts">
 import { useUserStore } from "@/stores/user";
+import { fetchy } from "@/utils/fetchy";
 import { storeToRefs } from "pinia";
-import { onMounted, ref } from "vue";
-import { fetchy } from "../utils/fetchy.js";
+import { onMounted, ref } from 'vue';
+
+interface ArchivedImage {
+  _id: string;
+  image: string;
+  createdAt: string;
+}
 
 const { currentUserID } = storeToRefs(useUserStore());
-const error = ref<string | null>(null); // Explicitly define the type as string or null
+const archivedImages = ref<ArchivedImage[]>([]);
+const isLoading = ref(false);
+const error = ref<string | null>(null);
 
-const images = ref([]);
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
 
 async function fetchArchive() {
-  console.log(`current user id: ${currentUserID.value}`);
   if (!currentUserID.value) {
-    error.value = "User ID is not available.";
-    console.error("User ID is not available.");
-    return; // Exit the function if user ID is not defined
+    error.value = "User not authenticated";
+    console.log("No user ID available");
+    return;
   }
 
+  isLoading.value = true;
   try {
     const result = await fetchy(`/api/archive/${currentUserID.value}`, "GET");
-    console.log("Fetched images:", result);
-    images.value = result._id;
+    console.log("Archive fetch result:", result);
+    
+    const imageData = Array.isArray(result.archives) ? result.archives : [];
+    archivedImages.value = imageData.map((img: ArchivedImage) => ({
+      ...img,
+      image: img.image.startsWith('data:image') ? img.image : `data:image/jpeg;base64,${img.image}`
+    }));
   } catch (err) {
-    error.value = "Failed to load images. Please try again later.";
-    console.error("Error fetching images:", err);
+    error.value = "Failed to load archive";
+    console.error("Archive fetch error:", err);
+  } finally {
+    isLoading.value = false;
   }
 }
 
-// Fetch images on component mount
-onMounted(() => {
-  fetchArchive().catch((err) => {
-    console.error("Error during onMounted fetch:", err);
-  });
-});
+const handleSaveCompleted = () => {
+  fetchArchive();
+};
+
+onMounted(fetchArchive);
 </script>
 
 <template>
-  <main class="main-container">
-    <h1>My Archive</h1>
-    {{ images }}
-  </main>
+  <div class="archive-wrapper">
+    <div class="archive-container">
+      <h1 class="archive-title">My Archive</h1>
+      
+      <div v-if="isLoading" class="status-message">Loading...</div>
+      <div v-else-if="error" class="status-message error">{{ error }}</div>
+      <div v-else-if="archivedImages.length === 0" class="status-message">
+        No archived images yet
+      </div>
+      
+      <div v-else class="image-grid">
+        <div
+          v-for="image in archivedImages"
+          :key="image._id"
+          class="image-card"
+        >
+          <div class="image-wrapper">
+            <img
+              :src="image.image"
+              :alt="`Archive from ${formatDate(image.createdAt)}`"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
-body {
-  font-family: "Courier New", Courier, monospace;
-  background-color: #f0f0f0;
-  margin: 0;
-  padding: 0;
-}
 
-.main-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
+
+
+
+.archive-wrapper {
+  width: 100%;
   min-height: 100vh;
-  background-color: #ffffff;
-  color: rgb(26, 26, 26);
-  padding: 20px;
+  background: #fafafa;
+  padding: 2rem 0;
 }
 
-h1 {
+.archive-container {
+  max-width: 935px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.archive-title {
+  /* font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; */
   font-family: "Courier New", Courier, monospace;
+  font-size: 1.75rem;
+  font-weight: 600;
   text-align: center;
-  margin: 20px 0;
+  margin-bottom: 2rem;
+  color: #262626;
 }
 
-.forms-section {
-  font-family: "Courier New", Courier, monospace;
+.status-message {
+  text-align: center;
+  padding: 2rem;
+  color: #8e8e8e;
+  font-size: 1.1rem;
+}
+
+.status-message.error {
+  color: #ed4956;
+}
+
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin: 0 auto;
+}
+
+.image-card {
+  position: relative;
   width: 100%;
-  max-width: 900px;
-  display: flex;
-  justify-content: space-between;
-  gap: 40px;
-  flex-wrap: wrap;
-  box-sizing: border-box;
+  background: #fff;
 }
 
-.form-container {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
+.image-wrapper {
+  position: relative;
+  padding-bottom: 100%;
+  overflow: hidden;
+}
+
+.image-wrapper img {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
 }
 
-@media (min-width: 768px) {
-  .form-container {
-    flex-direction: row;
-    justify-content: center;
-    gap: 40px;
-  }
+.image-wrapper:hover img {
+  transform: scale(1.02);
+}
 
-  .forms-section {
-    display: flex;
-    justify-content: center;
+@media (max-width: 935px) {
+  .archive-container {
+    padding: 0 15px;
   }
-
-  .form {
-    flex: 1;
-    max-width: 400px;
+  
+  .image-grid {
+    gap: 3px;
   }
 }
 
-@media (max-width: 480px) {
-  .forms-section {
-    padding: 10px;
-  }
-
-  h1 {
+@media (max-width: 600px) {
+  .archive-title {
     font-size: 1.5rem;
+  }
+  
+  .archive-wrapper {
+    padding: 1rem 0;
   }
 }
 </style>

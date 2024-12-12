@@ -57,11 +57,11 @@ function refreshImages() {
     });
 }
 
-let selectedImageString = "null"; // Variable to store the selected image ID
+let selectedImageString: string | null = null;
 
 function handleSelectImage(imageString: string) {
-  selectedImageString = imageString; // Save the emitted image\ to the variable
-  console.log(`Selected`);
+  // console.log("Selected image:", imageString); // Add logging
+  selectedImageString = imageString;
 }
 
 async function saveSelected() {
@@ -97,7 +97,7 @@ function deleteAll() {
 
     <div v-if="isLoggedIn" class="save-panel">
       <!-- <h2 class="canvas-message">{{ canvasMessage }}</h2> -->
-      <saveButton @saveSelected="saveSelected" />
+      <saveButton :selectedImageString="selectedImageString" @saveSelected="saveSelected" />
     </div>
     <!-- 
     <div class="tips-panel">
