@@ -128,7 +128,7 @@ async function getStableDiffusionResponse(type: string, steps: number, prompt_wo
       body: JSON.stringify({
         type: type,
         steps: steps,
-        prompt_word: "An artist expression of " + prompt_word,
+        prompt_word: `An artistic expression of ${prompt_word}. Photorealistic.`,
         original_image: originalImage,
       }),
     });
