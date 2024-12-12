@@ -71,9 +71,13 @@ class Routes {
 
   @Router.get("/archive/:author")
   async getArchiveByAuthor(author: string) {
-    const id = new ObjectId(author); // Convert string to ObjectId
-    const archives = await Archiving.getArchives(id); // Fetch images by author ID
-    return { archives };
+    const id = new ObjectId(author);
+    const archives = await Archiving.getArchives(id);
+    // Return full document including timestamps
+    return { archives: archives.map(archive => ({
+      ...archive,
+      createdAt: archive._id.getTimestamp().toISOString()
+    }))};
   }
 
   @Router.post("/archive")
@@ -81,6 +85,13 @@ class Routes {
     const author = Sessioning.getUser(session);
     const created = await Archiving.create(author, image);
     return { msg: created.msg };
+  }
+
+  @Router.delete("/archiving/:id") 
+  async deleteArchive(id: string) {
+    const _id = new ObjectId(id);
+    await Archiving.archives.deleteOne({ _id });
+    return { msg: "Archive deleted successfully!" };
   }
 
   //ImageDoc
