@@ -155,8 +155,9 @@ onMounted(fetchArchive);
 .archive-wrapper {
   width: 100%;
   min-height: 100vh;
-  background: #fafafa;
+  background: white;
   padding: 2rem 0;
+  margin-top: 40px;
 }
 
 .archive-container {
