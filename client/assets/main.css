@@ -1,8 +1,25 @@
-/* Add some global styles here! */
-
+/* Ensure the root and body elements allow scrolling */
 :root {
   --red: rgb(208, 67, 12);
-  --base-bg: #fb774f;
+  --base-bg: #ffffff;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow-y: auto; /* Allow vertical scrolling */
+}
+
+#app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.archive-view {
+  flex: 1; /* Ensures the view takes full height */
+  overflow-y: auto; /* Enables scrolling */
 }
 
 button.btn-small {
@@ -29,13 +46,4 @@ a.button {
   justify-content: center;
   align-items: center;
   gap: 1em;
-}
-
-html, body {
-  height: 100%;
-  margin: 0;
-  /* Define the gradient */
-  background: linear-gradient(to bottom, #aac0c9, #d7dfe1 ); /* Adjust colors as needed */
-  background-size: cover; /* Ensure the gradient covers the entire page */
-  background-attachment: fixed; /* Fix the background */
 }
