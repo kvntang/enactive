@@ -57,20 +57,24 @@ function refreshImages() {
     });
 }
 
-let selectedImageString: string | null = null;
+let selectedImageString = "null";
 
+//load canvas emits into variable
 function handleSelectImage(imageString: string) {
   // console.log("Selected image:", imageString); // Add logging
   selectedImageString = imageString;
+  console.log("image selected");
+  // console.log(selectedImageString);
 }
 
+//store to mongoDB
 async function saveSelected() {
-  //fetchy, save the selectedimageid
+
   try {
     const response = await fetchy("/api/archive", "POST", {
       body: { image: selectedImageString },
     });
-    console.log("Saved"); // This will log the selected image ID
+    console.log("Save response:", response);
   } catch (error) {
     console.error("Error archiving ImageDoc:", error);
     return null;
@@ -97,7 +101,7 @@ function deleteAll() {
 
     <div v-if="isLoggedIn" class="save-panel">
       <!-- <h2 class="canvas-message">{{ canvasMessage }}</h2> -->
-      <saveButton :selectedImageString="selectedImageString" @saveSelected="saveSelected" />
+      <saveButton  @saveSelected="saveSelected" />
     </div>
     <!-- 
     <div class="tips-panel">

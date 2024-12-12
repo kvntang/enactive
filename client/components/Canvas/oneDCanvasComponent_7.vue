@@ -889,12 +889,29 @@ onMounted(() => {
         for (let i = 0; i < staticPositions.length; i++) {
           const img = staticPositions[i];
 
-          if (mouseXWorld >= img.pos.x && mouseXWorld <= img.pos.x + gridSize && mouseYWorld >= img.currentY && mouseYWorld <= img.currentY + gridSize) {
+          if (mouseXWorld >= img.pos.x && mouseXWorld <= img.pos.x + gridSize && 
+              mouseYWorld >= img.currentY && mouseYWorld <= img.currentY + gridSize) {
             // Move the selected square to the end of the array
             const [selectedImage] = staticPositions.splice(i, 1);
             staticPositions.push(selectedImage);
             selectedParentId = selectedImage._id || null;
-            emit("selectImage", selectedImage.originalImage);
+
+            // Convert p5.Image to base64
+            if (selectedImage.p5Image) {
+              // Create a temporary canvas to draw the image
+              const tempCanvas = p.createGraphics(selectedImage.p5Image.width, selectedImage.p5Image.height);
+              tempCanvas.image(selectedImage.p5Image, 0, 0);
+              
+              // Convert canvas to base64
+              const base64Image = tempCanvas.canvas.toDataURL('image/png');
+            
+              emit("selectImage", base64Image);
+              
+              // Clean up temporary canvas
+              tempCanvas.remove();
+            } else {
+              console.warn('No p5 image found for the selected image');
+            }
             break;
           }
         }

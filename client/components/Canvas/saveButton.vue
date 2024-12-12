@@ -4,51 +4,20 @@ import { fetchy } from "@/utils/fetchy";
 import { storeToRefs } from "pinia";
 import { ref } from "vue";
 
-const props = defineProps<{
-  selectedImageString: string | null
-}>();
+// const props = defineProps<{
+//   selectedImageString: string | null
+// }>();
 
-const emit = defineEmits(["saveSelected", "saveCompleted"]);
+const emit = defineEmits(["saveSelected"]);
 
 const isLoading = ref(false);
-const errorMessage = ref<string | null>(null);
-const successMessage = ref<string | null>(null);
+// const errorMessage = ref<string | null>(null);
+// const successMessage = ref<string | null>(null);
 
-const { currentUserID } = storeToRefs(useUserStore());
+// const { currentUserID } = storeToRefs(useUserStore());
 
 const saveSelected = async () => {
-  if (!props.selectedImageString || props.selectedImageString === "null") {
-    // errorMessage.value = "Please select an image first";
-    console.log("No image selected");
-    return;
-  }
-
-
-  isLoading.value = true;
-  errorMessage.value = null;
-  
-  const imageToSave = props.selectedImageString;
-
-  console.log("Saving image:", {
-    userId: currentUserID.value,
-    image: imageToSave
-  });
-
-  try {
-    const response = await fetchy("/api/archive", "POST", {
-      body: {
-        userId: currentUserID.value,
-        image: imageToSave
-      }
-    });
-    console.log("Save response:", response);
-    emit('saveCompleted', response);
-  } catch (error) {
-    errorMessage.value = "Failed to save image";
-    console.error("Save error:", error);
-  } finally {
-    isLoading.value = false;
-  }
+  emit("saveSelected");
 };
 
 </script>

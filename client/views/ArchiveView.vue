@@ -2,7 +2,7 @@
 import { useUserStore } from "@/stores/user";
 import { fetchy } from "@/utils/fetchy";
 import { storeToRefs } from "pinia";
-import { onMounted, ref } from 'vue';
+import { onMounted, ref } from "vue";
 
 interface ArchivedImage {
   _id: string;
@@ -17,10 +17,10 @@ const error = ref<string | null>(null);
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
 };
 
@@ -35,11 +35,11 @@ async function fetchArchive() {
   try {
     const result = await fetchy(`/api/archive/${currentUserID.value}`, "GET");
     console.log("Archive fetch result:", result);
-    
+
     const imageData = Array.isArray(result.archives) ? result.archives : [];
     archivedImages.value = imageData.map((img: ArchivedImage) => ({
       ...img,
-      image: img.image.startsWith('data:image') ? img.image : `data:image/jpeg;base64,${img.image}`
+      image: img.image.startsWith("data:image") ? img.image : `data:image/jpeg;base64,${img.image}`,
     }));
   } catch (err) {
     error.value = "Failed to load archive";
@@ -60,25 +60,15 @@ onMounted(fetchArchive);
   <div class="archive-wrapper">
     <div class="archive-container">
       <h1 class="archive-title">My Archive</h1>
-      
+
       <div v-if="isLoading" class="status-message">Loading...</div>
       <div v-else-if="error" class="status-message error">{{ error }}</div>
-      <div v-else-if="archivedImages.length === 0" class="status-message">
-        No archived images yet
-      </div>
-      
+      <div v-else-if="archivedImages.length === 0" class="status-message">No archived images yet</div>
+
       <div v-else class="image-grid">
-        <div
-          v-for="image in archivedImages"
-          :key="image._id"
-          class="image-card"
-        >
+        <div v-for="image in archivedImages" :key="image._id" class="image-card">
           <div class="image-wrapper">
-            <img
-              :src="image.image"
-              :alt="`Archive from ${formatDate(image.createdAt)}`"
-              loading="lazy"
-            />
+            <img :src="image.image" :alt="`Archive from ${formatDate(image.createdAt)}`" loading="lazy" />
           </div>
         </div>
       </div>
@@ -87,15 +77,13 @@ onMounted(fetchArchive);
 </template>
 
 <style scoped>
-
-
-
-
 .archive-wrapper {
   width: 100%;
   min-height: 100vh;
   background: #fafafa;
   padding: 2rem 0;
+  overflow-y: scroll;
+  overscroll-behavior-y: contain;
 }
 
 .archive-container {
@@ -136,12 +124,14 @@ onMounted(fetchArchive);
   position: relative;
   width: 100%;
   background: #fff;
+  max-width: 300px;
 }
 
 .image-wrapper {
   position: relative;
   padding-bottom: 100%;
   overflow: hidden;
+  max-height: 300px;
 }
 
 .image-wrapper img {
@@ -152,6 +142,8 @@ onMounted(fetchArchive);
   height: 100%;
   object-fit: cover;
   transition: transform 0.3s ease;
+  max-width: 300px;
+  max-height: 300px;
 }
 
 .image-wrapper:hover img {
@@ -162,7 +154,7 @@ onMounted(fetchArchive);
   .archive-container {
     padding: 0 15px;
   }
-  
+
   .image-grid {
     gap: 3px;
   }
@@ -172,7 +164,7 @@ onMounted(fetchArchive);
   .archive-title {
     font-size: 1.5rem;
   }
-  
+
   .archive-wrapper {
     padding: 1rem 0;
   }
