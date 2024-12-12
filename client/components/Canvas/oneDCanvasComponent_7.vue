@@ -151,10 +151,9 @@ async function getStableDiffusionResponse(type: string, steps: number, prompt_wo
 }
 
 //--------------------------------------------------------------------------------------------------------------
+const preventScroll = (e: Event) => e.preventDefault();
 
 onMounted(() => {
-  // Disable default scroll behavior
-  const preventScroll = (e: Event) => e.preventDefault();
   window.addEventListener("wheel", preventScroll, { passive: false });
 
   if (canvasContainer.value) {
@@ -974,7 +973,7 @@ onMounted(() => {
     // Cleanup p5 instance on component unmount
     onUnmounted(() => {
       // Remove wheel event listener
-      const preventScroll = (e: Event) => e.preventDefault();
+      // const preventScroll = (e: Event) => e.preventDefault();
       window.removeEventListener("wheel", preventScroll);
       sketch.remove();
     });
