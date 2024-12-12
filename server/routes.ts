@@ -179,11 +179,12 @@ class Routes {
         Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4", // Specify the model
+        model: "gpt-4",
         messages: [
           {
             role: "user",
-            content: `Strictly generate a list of 36 word similar to this scene: ${prompt}. Order them from most similar to most dissimilar. The list will be words seperated by only comma, that is it, no labeling or indexing of any kind.`,
+            // content: `Strictly generate a list of 36 word similar to this scene: ${prompt}. Order them from most similar to most dissimilar. The list will be words seperated by only comma, that is it, no labeling or indexing of any kind.`,
+            content: `Generate a list of 36 individual words closely related to the following image caption: "${prompt}". The words should primarily be nouns, verbs, and meaningful adjectives. Order the words from most similar to least similar in relation to the caption. Provide the list as words separated solely by commas, with no additional text, labels, or numbering.`
           },
         ],
       }),
