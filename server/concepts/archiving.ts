@@ -22,9 +22,23 @@ export default class ArchivingConcept {
     return { msg: "Archive successfully created!", archive: await this.archives.readOne({ _id }) };
   }
 
+  // async getArchives(user: ObjectId) {
+  //   return await this.archives.readMany({ author: user }, { sort: { timePeriod: -1 } });
+  // }
   async getArchives(user: ObjectId) {
-    return await this.archives.readMany({ author: user }, { sort: { timePeriod: -1 } });
+    return await this.archives.readMany(
+      { author: user },
+      { sort: { _id: -1 } }  // Sort by _id descending (newest first)
+    );
   }
+
+  async delete(id: ObjectId) {
+    const archive = await this.archives.readOne({ _id: id });
+    if (!archive) throw new Error("Archive not found");
+    await this.archives.deleteOne({ _id: id });
+    return { msg: "Archive deleted successfully!" };
+  }
+  
 }
 
 export class ImageAlreadyInArchiveError extends NotAllowedError {
