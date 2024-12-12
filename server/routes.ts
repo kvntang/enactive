@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { Router, getExpressRouter } from "./framework/router";
 
-import { Authing, Imaging, Sessioning, Archiving } from "./app";
+import { Archiving, Authing, Imaging, Sessioning } from "./app";
 import { SessionDoc } from "./concepts/sessioning";
 
 import { z } from "zod";
@@ -138,7 +138,7 @@ class Routes {
       body: JSON.stringify({
         type: type,
         steps: steps,
-        prompt_word: prompt_word,
+        prompt_word: "An artist expression of " + prompt_word,
         original_image: original_image,
       }),
     });
