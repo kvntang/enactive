@@ -172,7 +172,7 @@ class Routes {
         messages: [
           {
             role: "user",
-            content: `Strictly generate a list of 36 phrases similar to this scene: ${prompt}. Rank them from most similar to most dissimilar. The list will be phrases seperated by comma, that is it, no labeling or indexing of any kind.`,
+            content: `Strictly generate a list of 36 phrases similar to this scene: ${prompt}. Rank them from most similar to most dissimilar. The list will be string phrases seperated by only comma, that is it, no labeling or indexing of any kind. For example: "a white cat, a black dog, a jump cat"`,
           },
         ],
       }),
