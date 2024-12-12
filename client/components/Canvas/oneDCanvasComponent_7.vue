@@ -111,22 +111,39 @@ async function getChatGPTResponse(prompt: string) {
   }
 }
 
-async function getStableDiffusionResponse(
-  type: string,
-  steps: number, 
-  prompt_word: string,
-  originalImage: string
-) {
+async function getStableDiffusionResponse(type: string, steps: number, prompt_word: string, originalImage: string) {
   try {
-    const result = await fetchy("/api/images/process", "POST", {
-      body: {
-        type,
-        steps, 
-        prompt_word,
-        original_image: originalImage, 
-      },
+    // const result = await fetchy("/api/images/process", "POST", {
+    //   body: {
+    //     type,
+    //     steps,
+    //     prompt_word,
+    //     original_image: originalImage,
+    //   },
+    // });
+    // return result.new_image;
+    const response = await fetch("https://app.unaliu.com/api/process", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: type,
+        steps: steps,
+        prompt_word: "An artist expression of " + prompt_word,
+        original_image: originalImage,
+      }),
     });
-    return result.new_image;
+
+    console.log(response);
+
+    if (!response.ok) {
+      console.error(`Image processing failed with status: ${response.statusText}`);
+      throw new Error(`Image processing failed: ${response.statusText}`);
+    }
+
+    const jsonResponse = await response.json();
+
+    console.log("Stable Diffusion Response:", jsonResponse);
+    return jsonResponse.new_image;
   } catch (error) {
     console.error("Error fetching stable diffusion response:", error);
     throw error;
