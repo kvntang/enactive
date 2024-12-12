@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { useUserStore } from "@/stores/user";
+import { fetchy } from "@/utils/fetchy";
 import { storeToRefs } from "pinia";
 import { ref } from "vue";
 
-const emit = defineEmits(["saveSelected"]);
+const props = defineProps<{
+  selectedImageString: string | null
+}>();
+
+const emit = defineEmits(["saveSelected", "saveCompleted"]);
 
 const isLoading = ref(false);
 const errorMessage = ref<string | null>(null);
@@ -12,9 +17,39 @@ const successMessage = ref<string | null>(null);
 const { currentUserID } = storeToRefs(useUserStore());
 
 const saveSelected = async () => {
-  emit("saveSelected");
-  // Add your save logic here if needed
+  if (!props.selectedImageString || props.selectedImageString === "null") {
+    errorMessage.value = "Please select an image first";
+    return;
+  }
+
+
+  isLoading.value = true;
+  errorMessage.value = null;
+  
+  const imageToSave = props.selectedImageString;
+
+  console.log("Saving image:", {
+    userId: currentUserID.value,
+    image: imageToSave
+  });
+
+  try {
+    const response = await fetchy("/api/archive", "POST", {
+      body: {
+        userId: currentUserID.value,
+        image: imageToSave
+      }
+    });
+    console.log("Save response:", response);
+    emit('saveCompleted', response);
+  } catch (error) {
+    errorMessage.value = "Failed to save image";
+    console.error("Save error:", error);
+  } finally {
+    isLoading.value = false;
+  }
 };
+
 </script>
 
 <template>
