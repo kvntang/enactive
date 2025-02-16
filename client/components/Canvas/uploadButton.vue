@@ -183,7 +183,6 @@ const handleFileChange = (event: Event) => {
   </form>
 </template>
 
-
 <style scoped>
 form {
   position: relative; /* Add relative positioning to the form */
@@ -200,8 +199,8 @@ form {
 
 .loading-animation {
   position: absolute; /* Position absolutely within the form */
-  top: 70%; 
-  left: 50%; 
+  top: 70%;
+  left: 50%;
   transform: translate(-50%, -50%); /* Perfectly center the loading spinner */
   display: flex;
   align-items: center;
@@ -216,8 +215,12 @@ form {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* change 'choose file' style */

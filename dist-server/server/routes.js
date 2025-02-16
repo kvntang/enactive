@@ -63,9 +63,13 @@ let Routes = (() => {
     let _deleteUser_decorators;
     let _logIn_decorators;
     let _logOut_decorators;
+    let _getArchiveByAuthor_decorators;
+    let _createArchive_decorators;
+    let _deleteArchive_decorators;
     let _createImage_decorators;
     let _getImagesByAuthor_decorators;
     let _deleteImagesByAuthor_decorators;
+    let _processImage_decorators;
     let _handleChatGPTRequest_decorators;
     return _a = class Routes {
             // Synchronize the concepts from `app.ts`.
@@ -123,10 +127,30 @@ let Routes = (() => {
                     return { msg: "Logged out!" };
                 });
             }
-            //image API routes
-            /**
-             * Create a new ImageDoc.
-             */
+            //Archiving
+            getArchiveByAuthor(author) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    const id = new mongodb_1.ObjectId(author);
+                    const archives = yield app_1.Archiving.getArchives(id);
+                    // Return full document including timestamps
+                    return { archives: archives.map(archive => (Object.assign(Object.assign({}, archive), { createdAt: archive._id.getTimestamp().toISOString() }))) };
+                });
+            }
+            createArchive(session, image) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    const author = app_1.Sessioning.getUser(session);
+                    const created = yield app_1.Archiving.create(author, image);
+                    return { msg: created.msg };
+                });
+            }
+            deleteArchive(id) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    const _id = new mongodb_1.ObjectId(id);
+                    yield app_1.Archiving.archives.deleteOne({ _id });
+                    return { msg: "Archive deleted successfully!" };
+                });
+            }
+            //ImageDoc
             createImage(session, parent, coordinate, type, step, prompt, originalImage, steppedImage, promptedImage, caption, promptList) {
                 return __awaiter(this, void 0, void 0, function* () {
                     const author = app_1.Sessioning.getUser(session);
@@ -148,6 +172,30 @@ let Routes = (() => {
                     return { msg: "All images deleted successfully!" };
                 });
             }
+            //Python Server
+            processImage(type, steps, prompt_word, original_image) {
+                return __awaiter(this, void 0, void 0, function* () {
+                    console.log("Process Image - Type:", type, "Steps:", steps);
+                    const response = yield fetch("https://app.unaliu.com/api/process", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            type: type,
+                            steps: steps,
+                            prompt_word: "An artist expression of " + prompt_word,
+                            original_image: original_image,
+                        }),
+                    });
+                    if (!response.ok) {
+                        console.error(`Image processing failed with status: ${response.statusText}`);
+                        throw new Error(`Image processing failed: ${response.statusText}`);
+                    }
+                    const jsonResponse = yield response.json();
+                    console.log("Stable Diffusion Response:", jsonResponse);
+                    return jsonResponse;
+                });
+            }
+            //OpenAI
             handleChatGPTRequest(prompt) {
                 return __awaiter(this, void 0, void 0, function* () {
                     if (!prompt || prompt.trim().length === 0) {
@@ -160,9 +208,13 @@ let Routes = (() => {
                             Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
                         },
                         body: JSON.stringify({
-                            model: "gpt-4", // Specify the model
+                            model: "gpt-4",
                             messages: [
-                                { role: "user", content: `Strictly generate a list of 36 string containing words similar to this scene: ${prompt}. Rank them from most similar to most dissimilar. The list will be indivudal words seperated by comma, thats it, no labeling or indexing of any kind.` }
+                                {
+                                    role: "user",
+                                    // content: `Strictly generate a list of 36 word similar to this scene: ${prompt}. Order them from most similar to most dissimilar. The list will be words seperated by only comma, that is it, no labeling or indexing of any kind.`,
+                                    content: `Generate a list of 36 individual words closely related to the following image caption: "${prompt}". The words should primarily be nouns, verbs, and meaningful adjectives. Order the words from most similar to least similar in relation to the caption. Provide the list as words separated solely by commas, with no additional text, labels, or numbering.`
+                                },
                             ],
                         }),
                     });
@@ -188,9 +240,18 @@ let Routes = (() => {
             _deleteUser_decorators = [router_1.Router.delete("/users")];
             _logIn_decorators = [router_1.Router.post("/login")];
             _logOut_decorators = [router_1.Router.post("/logout")];
+            _getArchiveByAuthor_decorators = [router_1.Router.get("/archive/:author")];
+            _createArchive_decorators = [router_1.Router.post("/archive")];
+            _deleteArchive_decorators = [router_1.Router.delete("/archiving/:id")];
             _createImage_decorators = [router_1.Router.post("/images")];
             _getImagesByAuthor_decorators = [router_1.Router.get("/images/author/:author")];
             _deleteImagesByAuthor_decorators = [router_1.Router.delete("/images/author/:authorId")];
+            _processImage_decorators = [router_1.Router.post("/images/process"), router_1.Router.validate(zod_1.z.object({
+                    type: zod_1.z.string().refine((val) => ["noise", "denoise"].includes(val), { message: "Invalid type" }),
+                    steps: zod_1.z.number().int().positive(),
+                    prompt_word: zod_1.z.string().optional(),
+                    original_image: zod_1.z.string(),
+                }))];
             _handleChatGPTRequest_decorators = [router_1.Router.post("/chatgpt")];
             __esDecorate(_a, null, _getSessionUser_decorators, { kind: "method", name: "getSessionUser", static: false, private: false, access: { has: obj => "getSessionUser" in obj, get: obj => obj.getSessionUser }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getUsers_decorators, { kind: "method", name: "getUsers", static: false, private: false, access: { has: obj => "getUsers" in obj, get: obj => obj.getUsers }, metadata: _metadata }, null, _instanceExtraInitializers);
@@ -201,9 +262,13 @@ let Routes = (() => {
             __esDecorate(_a, null, _deleteUser_decorators, { kind: "method", name: "deleteUser", static: false, private: false, access: { has: obj => "deleteUser" in obj, get: obj => obj.deleteUser }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _logIn_decorators, { kind: "method", name: "logIn", static: false, private: false, access: { has: obj => "logIn" in obj, get: obj => obj.logIn }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _logOut_decorators, { kind: "method", name: "logOut", static: false, private: false, access: { has: obj => "logOut" in obj, get: obj => obj.logOut }, metadata: _metadata }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _getArchiveByAuthor_decorators, { kind: "method", name: "getArchiveByAuthor", static: false, private: false, access: { has: obj => "getArchiveByAuthor" in obj, get: obj => obj.getArchiveByAuthor }, metadata: _metadata }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _createArchive_decorators, { kind: "method", name: "createArchive", static: false, private: false, access: { has: obj => "createArchive" in obj, get: obj => obj.createArchive }, metadata: _metadata }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _deleteArchive_decorators, { kind: "method", name: "deleteArchive", static: false, private: false, access: { has: obj => "deleteArchive" in obj, get: obj => obj.deleteArchive }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _createImage_decorators, { kind: "method", name: "createImage", static: false, private: false, access: { has: obj => "createImage" in obj, get: obj => obj.createImage }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _getImagesByAuthor_decorators, { kind: "method", name: "getImagesByAuthor", static: false, private: false, access: { has: obj => "getImagesByAuthor" in obj, get: obj => obj.getImagesByAuthor }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _deleteImagesByAuthor_decorators, { kind: "method", name: "deleteImagesByAuthor", static: false, private: false, access: { has: obj => "deleteImagesByAuthor" in obj, get: obj => obj.deleteImagesByAuthor }, metadata: _metadata }, null, _instanceExtraInitializers);
+            __esDecorate(_a, null, _processImage_decorators, { kind: "method", name: "processImage", static: false, private: false, access: { has: obj => "processImage" in obj, get: obj => obj.processImage }, metadata: _metadata }, null, _instanceExtraInitializers);
             __esDecorate(_a, null, _handleChatGPTRequest_decorators, { kind: "method", name: "handleChatGPTRequest", static: false, private: false, access: { has: obj => "handleChatGPTRequest" in obj, get: obj => obj.handleChatGPTRequest }, metadata: _metadata }, null, _instanceExtraInitializers);
             if (_metadata) Object.defineProperty(_a, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
         })(),
